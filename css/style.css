@@ -1229,6 +1229,28 @@ body {
   line-height: 1.5;
 }
 
+.date-picker-dropdowns {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+}
+
+.date-picker-dropdowns .date-select {
+  width: auto;
+  min-width: 0;
+  flex: 1 1 0;
+}
+
+.date-picker-dropdowns .date-clear-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  padding: 0 10px;
+}
+
 input[type="date"].form-input {
   color-scheme: dark;
 }
@@ -2291,6 +2313,5 @@ select.form-input option {
 .widget-drag-handle:active {
   cursor: grabbing;
 }
-
 
 

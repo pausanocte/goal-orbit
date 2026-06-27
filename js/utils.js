@@ -122,7 +122,10 @@ export function createDatePicker(initialValue, onChange) {
     currentDay = parts[2] ? String(parseInt(parts[2])) : '';
   }
 
-  const container = el('div', { className: 'date-picker-dropdowns' });
+  const container = el('div', {
+    className: 'date-picker-dropdowns',
+    style: 'display:flex; align-items:stretch; gap:8px; width:100%;'
+  });
 
   // 年セレクト
   const yearSelect = el('select', { className: 'form-input date-select date-select-year' });

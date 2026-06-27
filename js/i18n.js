@@ -169,6 +169,9 @@ const translations = {
     'common.delete': '削除',
     'common.noAreas': 'Areaがまだありません',
     'common.noAreasSub': 'サイドバーの「+」ボタンからAreaを追加しましょう',
+    'limit.areaReached': '無料版ではAreaは4件までです。',
+    'limit.goalReached': '無料版では{0}は4件までです。',
+    'limit.unlockHint': '買い切りキーを入力すると上限を解除できます。',
 
     // Month
     'month.format': '{0}年{1}月',
@@ -324,6 +327,9 @@ const translations = {
     'common.delete': 'Delete',
     'common.noAreas': 'No Areas yet',
     'common.noAreasSub': 'Click "+" in the sidebar to add an Area',
+    'limit.areaReached': 'The free plan allows up to 4 Areas.',
+    'limit.goalReached': 'The free plan allows up to 4 {0}.',
+    'limit.unlockHint': 'Enter a one-time purchase key to unlock the limit.',
 
     'month.format': '{1}/{0}',
   }

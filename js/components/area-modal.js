@@ -4,11 +4,15 @@
 
 import { el, AREA_COLORS, AREA_ICONS, createDatePicker } from '../utils.js';
 import { t } from '../i18n.js';
-import { addArea, updateArea, getAreaById } from '../store.js';
+import { addArea, updateArea, getAreaById, canAddArea } from '../store.js';
 
 let modalOverlay = null;
 
 export function openAreaModal(areaId = null, onSave = null) {
+  if (!areaId && !canAddArea()) {
+    alert(`${t('limit.areaReached')}\n${t('limit.unlockHint')}`);
+    return;
+  }
   closeAreaModal();
 
   const isEdit = !!areaId;
@@ -158,7 +162,15 @@ function handleSubmit(form, isEdit, areaId, color, icon, startDate, completedDat
   if (isEdit) {
     result = updateArea(areaId, { name, description, color, icon, startDate, completedDate });
   } else {
-    result = addArea({ name, description, color, icon, startDate, completedDate });
+    try {
+      result = addArea({ name, description, color, icon, startDate, completedDate });
+    } catch (err) {
+      if (err?.message === 'FREE_LIMIT_AREA_REACHED') {
+        alert(`${t('limit.areaReached')}\n${t('limit.unlockHint')}`);
+        return;
+      }
+      throw err;
+    }
   }
 
   closeAreaModal();

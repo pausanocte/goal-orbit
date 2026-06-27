@@ -4,7 +4,7 @@
 
 import { el, STATUS_CONFIG, PRIORITY_CONFIG, FREQUENCY_CONFIG, CATEGORY_CONFIG, generateId, createDatePicker } from '../utils.js';
 import { t } from '../i18n.js';
-import { addGoal, updateGoal, getGoalById, getActiveAreas } from '../store.js';
+import { addGoal, updateGoal, getGoalById, getActiveAreas, canAddGoal } from '../store.js';
 import { openAreaModal } from './area-modal.js';
 
 let modalOverlay = null;
@@ -18,6 +18,11 @@ export function openGoalModal(goalId, defaultArea = null, onSave = null) {
   // デフォルト値の設定
   const initialAreaId = goal?.areaId || defaultArea?.areaId || (getActiveAreas()[0]?.id || '');
   const initialCategory = goal?.category || defaultArea?.category || 'routines';
+
+  if (!goalId && !canAddGoal(initialCategory)) {
+    alert(`${t('limit.goalReached', t(CATEGORY_CONFIG[initialCategory].labelKey))}\n${t('limit.unlockHint')}`);
+    return;
+  }
 
   modalOverlay = el('div', { className: 'modal-overlay', onClick: (e) => {
     if (e.target === modalOverlay) closeGoalModal();
@@ -360,7 +365,15 @@ function handleSubmit(form, isEdit, goalId, onSave, pickers = {}) {
   if (isEdit) {
     updateGoal(goalId, data);
   } else {
-    addGoal(data);
+    try {
+      addGoal(data);
+    } catch (err) {
+      if (err?.message === `FREE_LIMIT_${data.category.toUpperCase()}_REACHED`) {
+        alert(`${t('limit.goalReached', t(CATEGORY_CONFIG[data.category].labelKey))}\n${t('limit.unlockHint')}`);
+        return;
+      }
+      throw err;
+    }
   }
 
   closeGoalModal();

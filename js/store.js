@@ -10,6 +10,8 @@ const REVIEWS_KEY = 'orbit_reviews';
 const VERSION_KEY = 'orbit_version';
 const LAST_MODIFIED_KEY = 'orbit_last_modified';
 const DASHBOARD_LAYOUT_KEY = 'orbit_dashboard_layout';
+const FREE_ITEM_LIMIT = 4;
+const PREMIUM_UNLOCK_KEY = 'orbit_premium_unlocked';
 
 const DEFAULT_DASHBOARD_LAYOUT = ['areas', 'routines', 'projects', 'due_soon', 'status', 'priority', 'recent'];
 
@@ -28,6 +30,27 @@ function saveData(key, data) {
 
 export function getLastModified() {
   return parseInt(localStorage.getItem(LAST_MODIFIED_KEY) || '0', 10);
+}
+
+export function isPremiumUnlocked() {
+  return localStorage.getItem(PREMIUM_UNLOCK_KEY) === 'true';
+}
+
+export function setPremiumUnlocked(unlocked) {
+  localStorage.setItem(PREMIUM_UNLOCK_KEY, unlocked ? 'true' : 'false');
+  window.dispatchEvent(new Event('orbitDataChanged'));
+}
+
+export function getFreeItemLimit() {
+  return FREE_ITEM_LIMIT;
+}
+
+export function canAddArea() {
+  return isPremiumUnlocked() || getAllAreas().length < FREE_ITEM_LIMIT;
+}
+
+export function canAddGoal(category) {
+  return isPremiumUnlocked() || getAllGoals().filter(g => g.category === category).length < FREE_ITEM_LIMIT;
 }
 
 // ===== Migration from v2 =====
@@ -136,6 +159,9 @@ export function getAreaById(id) {
 }
 
 export function addArea({ name, description = '', color, icon, startDate = null, completedDate = null }) {
+  if (!canAddArea()) {
+    throw new Error('FREE_LIMIT_AREA_REACHED');
+  }
   const areas = getAllAreas();
   const now = new Date().toISOString();
   const archived = !!completedDate;
@@ -208,6 +234,9 @@ export function getGoalById(id) {
 }
 
 export function addGoal({ title, description, areaId, category, status = 'active', priority = 'medium', dueDate = null, startDate = null, completedDate = null, subtasks = [], frequency = null, frequencyCustom = null }) {
+  if (!canAddGoal(category)) {
+    throw new Error(`FREE_LIMIT_${category.toUpperCase()}_REACHED`);
+  }
   const goals = getAllGoals();
   const now = new Date().toISOString();
   if (completedDate) {
