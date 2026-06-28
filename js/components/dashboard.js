@@ -17,6 +17,8 @@ let projectsSortOrder = 'asc';
 let routinesStatusFilter = ['active', 'on-hold'];
 let projectsStatusFilter = ['active', 'on-hold'];
 let activeWidgetDrag = null;
+const DRAG_SCROLL_EDGE_PX = 96;
+const DRAG_SCROLL_MAX_STEP = 18;
 
 function requestCompletedDate(currentValue = '') {
   const input = prompt('完了日を YYYY/MM/DD で入力してください。', currentValue ? formatDate(currentValue) : '');
@@ -796,6 +798,33 @@ function initDragAndDrop(gridContainer) {
   });
 }
 
+function updateDragAutoScroll() {
+  if (!activeWidgetDrag) return;
+
+  const pointerY = activeWidgetDrag.pointerY;
+  if (typeof pointerY !== 'number') {
+    activeWidgetDrag.scrollFrame = requestAnimationFrame(updateDragAutoScroll);
+    return;
+  }
+
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+  let scrollDelta = 0;
+
+  if (pointerY < DRAG_SCROLL_EDGE_PX) {
+    const ratio = (DRAG_SCROLL_EDGE_PX - pointerY) / DRAG_SCROLL_EDGE_PX;
+    scrollDelta = -Math.max(4, Math.round(DRAG_SCROLL_MAX_STEP * ratio));
+  } else if (pointerY > viewportHeight - DRAG_SCROLL_EDGE_PX) {
+    const ratio = (pointerY - (viewportHeight - DRAG_SCROLL_EDGE_PX)) / DRAG_SCROLL_EDGE_PX;
+    scrollDelta = Math.max(4, Math.round(DRAG_SCROLL_MAX_STEP * ratio));
+  }
+
+  if (scrollDelta !== 0) {
+    window.scrollBy(0, scrollDelta);
+  }
+
+  activeWidgetDrag.scrollFrame = requestAnimationFrame(updateDragAutoScroll);
+}
+
 function makeDraggable(widgetEl, container) {
   widgetEl.classList.add('dashboard-widget');
   
@@ -838,6 +867,10 @@ function makeDraggable(widgetEl, container) {
     document.removeEventListener('mousemove', onMouseMove);
     document.removeEventListener('mouseup', onMouseUp);
 
+    if (activeWidgetDrag.scrollFrame) {
+      cancelAnimationFrame(activeWidgetDrag.scrollFrame);
+    }
+
     const newLayout = Array.from(container.children)
       .map(child => child.dataset.widgetId)
       .filter(id => id);
@@ -848,6 +881,7 @@ function makeDraggable(widgetEl, container) {
 
   const onMouseMove = (e) => {
     if (!activeWidgetDrag || activeWidgetDrag.widget !== widgetEl) return;
+    activeWidgetDrag.pointerY = e.clientY;
 
     const underPointer = document.elementFromPoint(e.clientX, e.clientY);
     const target = underPointer?.closest('.dashboard-widget');
@@ -873,7 +907,11 @@ function makeDraggable(widgetEl, container) {
     e.stopPropagation();
     if (activeWidgetDrag) return;
 
-    activeWidgetDrag = { widget: widgetEl };
+    activeWidgetDrag = {
+      widget: widgetEl,
+      pointerY: e.clientY,
+      scrollFrame: requestAnimationFrame(updateDragAutoScroll)
+    };
     widgetEl.classList.add('dragging');
     widgetEl.style.opacity = '0.5';
     widgetEl.style.pointerEvents = 'none';
