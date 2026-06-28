@@ -1,0 +1,27 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Dependency directories
+node_modules/
+
+# Build / temporary files
+dist/
+tmp/
+temp/
+*.tmp
+*.log
+
+# Exported user backups
+orbit-backup-*.json
+orbit-cloud-backup*.json
+
+# Local test or scratch data
+*.local.json
+*.bak
