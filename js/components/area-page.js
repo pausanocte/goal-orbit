@@ -21,6 +21,24 @@ function requestCompletedDate(currentValue = '') {
   return normalized;
 }
 
+function createGoalDateSummary(goal) {
+  if (!goal.startDate && !goal.completedDate) return null;
+
+  return el('div', {
+    className: 'goal-card-date-range',
+    style: 'display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; font-size: 0.74rem; color: var(--text-secondary);'
+  },
+    el('span', { className: 'goal-card-date' },
+      el('i', { 'data-lucide': 'calendar' }),
+      el('span', {}, `開始: ${goal.startDate ? formatDate(goal.startDate) : '-'}`)
+    ),
+    el('span', { className: 'goal-card-date' },
+      el('i', { 'data-lucide': 'calendar-check-2' }),
+      el('span', {}, `完了: ${goal.completedDate ? formatDate(goal.completedDate) : '-'}`)
+    )
+  );
+}
+
 export function renderAreaPage(container, areaId, onNavigate, onRefresh) {
   clearElement(container);
 
@@ -351,6 +369,10 @@ function createGoalCard(goal, area, index, onRefresh) {
 
   // ダイナミックコンテンツラッパー
   const dynamicWrapper = el('div', { className: 'goal-card-dynamic' });
+  const dateSummary = createGoalDateSummary(goal);
+  if (dateSummary) {
+    dynamicWrapper.appendChild(dateSummary);
+  }
 
   // CategoryがProjectsの場合: 期限日バッジ/日付入力
   if (goal.category === 'projects') {

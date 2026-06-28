@@ -3,12 +3,49 @@
 // ==========================================
 
 import { el, STATUS_CONFIG, PRIORITY_CONFIG, FREQUENCY_CONFIG, CATEGORY_CONFIG, generateId, createDatePicker, registerEscapeClose } from '../utils.js';
-import { t } from '../i18n.js';
-import { addGoal, updateGoal, getGoalById, getActiveAreas, canAddGoal } from '../store.js';
+import { t, formatYearMonthI18n } from '../i18n.js';
+import { addGoal, updateGoal, getGoalById, getActiveAreas, canAddGoal, getReviewsByGoalId } from '../store.js';
 import { openAreaModal } from './area-modal.js';
 
 let modalOverlay = null;
 let removeEscapeClose = null;
+
+function createGoalReviewHistory(goal) {
+  const reviews = getReviewsByGoalId(goal.id);
+  const section = el('div', { className: 'form-field goal-review-history' },
+    el('label', { className: 'form-label' }, '振り返り履歴')
+  );
+
+  if (reviews.length === 0) {
+    section.appendChild(
+      el('div', { className: 'glass-card', style: 'padding: 12px; color: var(--text-secondary); font-size: 0.82rem;' }, 'この項目の振り返りはまだありません。')
+    );
+    return section;
+  }
+
+  const list = el('div', { style: 'display: flex; flex-direction: column; gap: 10px;' });
+  reviews.forEach(review => {
+    const reviewGoal = review.goals?.[goal.id];
+    const achieved = !!reviewGoal?.achieved;
+    const commentText = reviewGoal?.comment?.trim() || 'コメントなし';
+
+    list.appendChild(
+      el('div', { className: 'glass-card', style: 'padding: 12px; border: 1px solid var(--border-subtle);' },
+        el('div', { style: 'display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 6px;' },
+          el('strong', { style: 'font-size: 0.86rem; color: var(--text-primary);' }, formatYearMonthI18n(review.yearMonth)),
+          el('span', {
+            className: 'status-badge',
+            style: `font-size: 0.72rem; color: ${achieved ? '#34D399' : '#F59E0B'}; border-color: ${achieved ? '#34D399' : '#F59E0B'};`
+          }, achieved ? '達成' : '未達成')
+        ),
+        el('p', { style: 'margin: 0; color: var(--text-secondary); font-size: 0.82rem; white-space: pre-wrap;' }, commentText)
+      )
+    );
+  });
+
+  section.appendChild(list);
+  return section;
+}
 
 export function openGoalModal(goalId, defaultArea = null, onSave = null) {
   closeGoalModal();
@@ -280,6 +317,10 @@ export function openGoalModal(goalId, defaultArea = null, onSave = null) {
   updateDynamicFields();
 
   // 隠しフィールド: サブタスクデータ
+  if (isEdit && goal) {
+    form.appendChild(createGoalReviewHistory(goal));
+  }
+
   const subtasksHidden = el('input', { type: 'hidden', name: 'subtasksData', value: '' });
   form.appendChild(subtasksHidden);
 

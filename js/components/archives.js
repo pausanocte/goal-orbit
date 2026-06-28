@@ -5,6 +5,7 @@
 import { el, clearElement, PRIORITY_CONFIG, FREQUENCY_CONFIG, formatDate, getSubtaskProgress } from '../utils.js';
 import { t } from '../i18n.js';
 import { getArchivedGoals, unarchiveGoal, deleteGoal, getAllAreas, getAreaById, updateArea, deleteArea } from '../store.js';
+import { openGoalModal } from './goal-modal.js';
 
 export function renderArchives(container, onRefresh) {
   clearElement(container);
@@ -184,7 +185,8 @@ function createArchiveCard(goal, index, onRefresh) {
 
   const card = el('div', {
     className: 'goal-card archived-card',
-    style: `animation-delay: ${index * 0.05}s; border-top: 3px solid ${areaColor}`
+    style: `animation-delay: ${index * 0.05}s; border-top: 3px solid ${areaColor}; cursor: pointer;`,
+    onClick: () => openGoalModal(goal.id, { areaId: goal.areaId, category: goal.category }, onRefresh)
   });
 
   // ヘッダー
@@ -197,7 +199,8 @@ function createArchiveCard(goal, index, onRefresh) {
       el('button', {
         className: 'icon-btn',
         title: t('archives.restore'),
-        onClick: () => {
+        onClick: (e) => {
+          e.stopPropagation();
           unarchiveGoal(goal.id);
           onRefresh();
         }
@@ -207,7 +210,8 @@ function createArchiveCard(goal, index, onRefresh) {
       el('button', {
         className: 'icon-btn',
         title: t('archives.permanentDelete'),
-        onClick: () => {
+        onClick: (e) => {
+          e.stopPropagation();
           if (confirm(t('archives.confirmDelete', goal.title))) {
             deleteGoal(goal.id);
             onRefresh();

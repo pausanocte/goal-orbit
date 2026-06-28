@@ -355,6 +355,12 @@ export function getAllReviews() {
   return loadData(REVIEWS_KEY);
 }
 
+export function getReviewsByGoalId(goalId) {
+  return getAllReviews()
+    .filter(review => review.goals && review.goals[goalId])
+    .sort((a, b) => b.yearMonth.localeCompare(a.yearMonth));
+}
+
 export function getReviewByYearMonth(yearMonth) {
   return getAllReviews().find(r => r.yearMonth === yearMonth) || null;
 }
