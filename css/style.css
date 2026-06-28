@@ -1242,13 +1242,8 @@ body {
   flex: 1 1 0;
 }
 
-.date-picker-dropdowns .date-clear-btn {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 40px;
-  padding: 0 10px;
+.date-picker-dropdowns .date-select-year {
+  flex: 1.25 1 0;
 }
 
 input[type="date"].form-input {
@@ -1263,6 +1258,16 @@ select.form-input {
   background-repeat: no-repeat;
   background-position: right 12px center;
   padding-right: 36px;
+}
+
+.date-select {
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+
+.date-select option {
+  color: var(--text-primary);
+  background: var(--bg-elevated);
 }
 
 select.form-input option {
@@ -2313,5 +2318,4 @@ select.form-input option {
 .widget-drag-handle:active {
   cursor: grabbing;
 }
-
 
