@@ -4,7 +4,7 @@
 
 import { el, clearElement, STATUS_CONFIG, PRIORITY_CONFIG, formatDate, getSubtaskProgress, normalizeDateInput } from '../utils.js';
 import { t } from '../i18n.js';
-import { getStats, getDueSoonGoals, getActiveAreas, getAreaById, getActiveGoals, getAllGoals, updateGoal, toggleSubtask, getDashboardLayout, saveDashboardLayout } from '../store.js';
+import { getStats, getDueSoonGoals, getActiveAreas, getAreaById, getActiveGoals, getAllGoals, updateGoal, toggleSubtask, getDashboardLayout, saveDashboardLayout, deleteGoal } from '../store.js';
 import { openGoalModal } from './goal-modal.js';
 import { openAreaModal } from './area-modal.js';
 
@@ -29,6 +29,23 @@ function requestCompletedDate(currentValue = '') {
     return undefined;
   }
   return normalized;
+}
+
+function createDeleteGoalButton(goal, onDeleted) {
+  return el('button', {
+    className: 'btn btn-ghost btn-sm',
+    title: t('common.delete'),
+    style: 'padding: 4px 6px; min-width: auto; justify-self: end;',
+    onClick: (e) => {
+      e.stopPropagation();
+      if (confirm(t('area.confirmDelete', goal.title))) {
+        deleteGoal(goal.id);
+        onDeleted();
+      }
+    }
+  },
+    el('i', { 'data-lucide': 'trash-2', style: 'width: 14px; height: 14px;' })
+  );
 }
 
 function createInlineDateEditor(goal, field, onSaved, options = {}) {
@@ -328,7 +345,8 @@ export function renderDashboard(container, onNavigate) {
       el('span', { className: 'header-col-start' }, '開始日'),
       el('span', { className: 'header-col-end' }, '完了日'),
       el('span', { className: 'header-col-status' }, t('dashboard.colStatus')),
-      el('span', { className: 'header-col-priority' }, t('dashboard.colPriority'))
+      el('span', { className: 'header-col-priority' }, t('dashboard.colPriority')),
+      el('span', { className: 'header-col-actions' }, '')
     );
     list.appendChild(listHeader);
 
@@ -422,7 +440,8 @@ export function renderDashboard(container, onNavigate) {
         createInlineDateEditor(goal, 'startDate', () => renderDashboard(container, onNavigate)),
         createInlineDateEditor(goal, 'completedDate', () => renderDashboard(container, onNavigate)),
         statusSelect,
-        prioritySelect
+        prioritySelect,
+        createDeleteGoalButton(goal, () => renderDashboard(container, onNavigate))
       );
       const wrapper = el('div', { className: 'dashboard-compact-item-wrapper' }, item);
       list.appendChild(wrapper);
@@ -500,7 +519,8 @@ export function renderDashboard(container, onNavigate) {
       el('span', { className: 'header-col-due' }, t('dashboard.colDueDate')),
       el('span', { className: 'header-col-progress' }, t('dashboard.colProgress')),
       el('span', { className: 'header-col-status' }, t('dashboard.colStatus')),
-      el('span', { className: 'header-col-priority' }, t('dashboard.colPriority'))
+      el('span', { className: 'header-col-priority' }, t('dashboard.colPriority')),
+      el('span', { className: 'header-col-actions' }, '')
     );
     list.appendChild(listHeader);
 
@@ -589,7 +609,8 @@ export function renderDashboard(container, onNavigate) {
         dueInput,
         progressEl,
         statusSelect,
-        prioritySelect
+        prioritySelect,
+        createDeleteGoalButton(goal, () => renderDashboard(container, onNavigate))
       );
       const subtaskList = createDashboardSubtaskList(goal, () => renderDashboard(container, onNavigate));
       const wrapper = el('div', { className: 'dashboard-compact-item-wrapper' }, item);

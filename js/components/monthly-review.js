@@ -5,6 +5,7 @@
 import { el, clearElement, getCurrentYearMonth, formatDate, getSubtaskProgress } from '../utils.js';
 import { t, getYearMonthOptionsI18n, formatYearMonthI18n } from '../i18n.js';
 import { getReviewByYearMonth, saveReview, getAllReviews, getAreaById, getAllGoals, updateGoal } from '../store.js';
+import { openGoalModal } from './goal-modal.js';
 
 const REVIEW_AUTOSAVE_DELAY_MS = 800;
 let reviewLeaveHandler = null;
@@ -340,7 +341,11 @@ export function renderMonthlyReview(container) {
       style: 'padding: 14px; border: 1px solid var(--border-subtle); display: flex; flex-direction: column; gap: 4px; background: rgba(255, 255, 255, 0.015);'
     },
     el('div', { style: 'display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;' },
-      el('div', { style: 'display: flex; align-items: center; gap: 8px; min-width: 0;' },
+      el('button', {
+        type: 'button',
+        style: 'display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; background: transparent; border: 0; padding: 0; cursor: pointer; text-align: left;',
+        onClick: () => openGoalModal(goal.id, { areaId: goal.areaId, category: goal.category }, () => renderMonthlyReview(container))
+      },
         el('span', { style: `width: 8px; height: 8px; border-radius: 50%; background: ${areaColor}; flex-shrink: 0;` }),
         el('div', { style: 'min-width: 0;' },
           el('span', { style: 'font-size: 0.88rem; font-weight: 600; color: var(--text-primary); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;' }, goal.title),
