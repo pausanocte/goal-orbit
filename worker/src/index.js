@@ -23,7 +23,10 @@ export default {
     } catch (error) {
       console.error(error);
       const status = error.status || 500;
-      return json({ error: error.message || 'INTERNAL_ERROR' }, status, corsHeaders(request, env));
+      return json({
+        error: error.message || 'INTERNAL_ERROR',
+        code: error.code || null
+      }, status, corsHeaders(request, env));
     }
   }
 };
@@ -50,7 +53,14 @@ async function createCheckout(request, env) {
     body
   });
   const session = await response.json();
-  if (!response.ok) throw httpError(502, session.error?.message || 'STRIPE_CHECKOUT_FAILED');
+  if (!response.ok) {
+    console.error('Stripe checkout failed', {
+      code: session.error?.code,
+      type: session.error?.type,
+      message: session.error?.message
+    });
+    throw httpError(502, session.error?.message || 'STRIPE_CHECKOUT_FAILED', session.error?.code || 'STRIPE_CHECKOUT_FAILED');
+  }
   return { url: session.url };
 }
 
@@ -144,6 +154,6 @@ function json(body, status = 200, headers = {}) {
   });
 }
 
-function httpError(status, message) {
-  return Object.assign(new Error(message), { status });
+function httpError(status, message, code = null) {
+  return Object.assign(new Error(message), { status, code });
 }

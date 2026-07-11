@@ -246,6 +246,9 @@ export function renderSidebar(container, currentPage, onNavigate) {
             await startPremiumPurchase();
           } catch (err) {
             console.error('Checkout failed', err);
+            const detail = err?.message ? `\n\n${err.message}` : '';
+            alert((lang === 'ja' ? '購入画面を開けませんでした。時間をおいて再度お試しください。' : 'Could not open checkout. Please try again.') + detail);
+            return;
             alert(lang === 'ja' ? '購入画面を開けませんでした。時間をおいて再度お試しください。' : 'Could not open checkout. Please try again.');
           }
         }

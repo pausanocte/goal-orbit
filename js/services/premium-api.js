@@ -23,7 +23,10 @@ async function premiumRequest(path, options = {}) {
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new Error(body.error || `PREMIUM_API_${response.status}`);
+    const error = new Error(body.error || `PREMIUM_API_${response.status}`);
+    error.code = body.code || null;
+    error.status = response.status;
+    throw error;
   }
   return response.json();
 }
