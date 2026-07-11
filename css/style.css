@@ -341,11 +341,12 @@ body {
   padding: 8px 12px;
   border-top: 1px solid var(--border-subtle);
   display: flex;
+  flex-direction: column;
   gap: 6px;
 }
 
 .sidebar-action-btn {
-  flex: 1;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1952,15 +1953,15 @@ select.form-input option {
 .compact-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-top: 10px;
+  gap: 3px;
+  margin-top: 8px;
 }
 
 .dashboard-compact-item-wrapper {
   background: var(--surface-glass);
   border: 1px solid var(--surface-glass-border);
-  border-radius: var(--radius-md);
-  margin-bottom: 4px;
+  border-radius: 10px;
+  margin-bottom: 2px;
   transition: all var(--transition-normal);
   display: flex;
   flex-direction: column;
@@ -1976,11 +1977,12 @@ select.form-input option {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 4px 10px;
+  gap: 8px;
+  min-height: 34px;
+  padding: 3px 8px;
   background: transparent;
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: 10px;
   cursor: pointer;
   transition: all var(--transition-normal);
 }
@@ -1990,10 +1992,11 @@ select.form-input option {
   min-width: 0;
   display: flex;
   flex-direction: column;
+  gap: 1px;
 }
 
 .compact-item-title {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 550;
   color: var(--text-primary);
   overflow: hidden;
@@ -2002,7 +2005,7 @@ select.form-input option {
 }
 
 .compact-item-meta {
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   color: var(--text-tertiary);
 }
 
@@ -2043,16 +2046,16 @@ select.form-input option {
 .routines-list .compact-list-header,
 .routines-list .dashboard-compact-item {
   display: grid;
-  grid-template-columns: 12px minmax(160px, 1fr) 100px 110px 110px 88px 88px;
+  grid-template-columns: 10px minmax(160px, 1fr) 96px 104px 104px 82px 82px 34px;
   align-items: center;
-  gap: 12px;
-  padding: 6px 12px;
+  gap: 8px;
+  padding: 4px 8px;
 }
 
 .routines-list .compact-list-header {
-  padding-bottom: 6px;
+  padding-bottom: 5px;
   border-bottom: 1px solid var(--border-subtle);
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 
 .routines-list .compact-list-header .header-col-title {
@@ -2079,20 +2082,24 @@ select.form-input option {
   justify-self: start;
 }
 
+.routines-list .header-col-actions {
+  justify-self: end;
+}
+
 /* Projects List */
 .projects-list .compact-list-header,
 .projects-list .dashboard-compact-item {
   display: grid;
-  grid-template-columns: 12px minmax(160px, 1fr) 110px 110px 110px 130px 88px 88px;
+  grid-template-columns: 10px minmax(160px, 1fr) 104px 104px 104px 120px 82px 82px 34px;
   align-items: center;
-  gap: 12px;
-  padding: 6px 12px;
+  gap: 8px;
+  padding: 4px 8px;
 }
 
 .projects-list .compact-list-header {
-  padding-bottom: 6px;
+  padding-bottom: 5px;
   border-bottom: 1px solid var(--border-subtle);
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 
 .projects-list .compact-list-header .header-col-title {
@@ -2124,11 +2131,28 @@ select.form-input option {
   justify-self: start;
 }
 
+.projects-list .header-col-actions {
+  justify-self: end;
+}
+
+.dashboard-delete-goal-btn {
+  justify-self: end;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  padding: 0 !important;
+  color: var(--text-tertiary);
+}
+
+.dashboard-delete-goal-btn:hover {
+  color: var(--danger, #ef4444);
+}
+
 /* Compact Badge style overrides in dashboard list */
 .dashboard-compact-item .status-badge,
 .dashboard-compact-item .priority-badge {
-  padding: 1px 6px;
-  font-size: 0.68rem;
+  padding: 1px 5px;
+  font-size: 0.64rem;
   white-space: nowrap;
 }
 
@@ -2197,10 +2221,10 @@ select.form-input option {
   border: 1px solid var(--border-subtle) !important;
   border-radius: 4px;
   color: var(--text-secondary);
-  font-size: 0.72rem;
-  padding: 2px 4px;
+  font-size: 0.66rem;
+  padding: 1px 4px;
   outline: none;
-  width: 110px;
+  width: 104px;
   cursor: pointer;
   font-family: inherit;
   color-scheme: dark;

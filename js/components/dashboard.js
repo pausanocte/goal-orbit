@@ -34,9 +34,8 @@ function requestCompletedDate(currentValue = '') {
 
 function createDeleteGoalButton(goal, onDeleted) {
   return el('button', {
-    className: 'btn btn-ghost btn-sm',
+    className: 'btn btn-ghost btn-sm dashboard-delete-goal-btn',
     title: t('common.delete'),
-    style: 'padding: 4px 6px; min-width: auto; justify-self: end;',
     onClick: (e) => {
       e.stopPropagation();
       if (confirm(t('area.confirmDelete', goal.title))) {
@@ -563,7 +562,7 @@ export function renderDashboard(container, onNavigate) {
         type: 'date',
         value: goal.dueDate || '',
         className: 'inline-edit-date',
-        style: 'background: transparent; border: 1px solid var(--border-subtle); border-radius: 4px; color: var(--text-secondary); font-size: 0.72rem; padding: 2px 4px; outline: none; width: 110px; cursor: pointer; font-family: inherit; color-scheme: dark; justify-self: start;',
+        style: 'background: transparent; border: 1px solid var(--border-subtle); border-radius: 4px; color: var(--text-secondary); font-size: 0.66rem; padding: 1px 4px; outline: none; width: 104px; cursor: pointer; font-family: inherit; color-scheme: dark; justify-self: start;',
         onChange: (e) => {
           updateGoal(goal.id, { dueDate: e.target.value || null });
           renderDashboard(container, onNavigate);
