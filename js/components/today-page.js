@@ -80,7 +80,7 @@ function createGoalListItem(goal, onRefresh, text) {
 }
 
 function createSection(title, icon, goals, emptyText, onRefresh, text) {
-  const card = el('div', { className: 'glass-card' },
+  const card = el('div', { className: 'glass-card today-section-card' },
     el('h2', { className: 'card-title' },
       el('i', { 'data-lucide': icon }),
       el('span', {}, ` ${title}`)
@@ -133,7 +133,7 @@ export function renderTodayPage(container) {
     )
   );
 
-  const grid = el('div', { className: 'dashboard-widget-grid' });
+  const grid = el('div', { className: 'today-page-grid' });
   grid.appendChild(createSection(getLang() === 'ja' ? '期限が近い目標' : 'Due Soon', 'alarm-clock', dueSoon, text.dueSoonEmpty, rerender, text));
   grid.appendChild(createSection(text.highPriority, 'flag', highPriority, text.highPriorityEmpty, rerender, text));
   grid.appendChild(createSection('Routines', 'repeat', routines, text.routinesEmpty, rerender, text));
