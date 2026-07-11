@@ -1,0 +1,14 @@
+name = "orbit-premium"
+main = "src/index.js"
+compatibility_date = "2026-07-07"
+workers_dev = true
+
+[vars]
+ORBIT_APP_URL = "https://pausanocte.github.io/goal-orbit/"
+ORBIT_APP_ORIGIN = "https://pausanocte.github.io"
+ALLOWED_ORIGINS = "https://pausanocte.github.io,http://127.0.0.1:4173,http://localhost:4173"
+STRIPE_PRICE_ID = "price_1Ts1oEEDjuDk20PtKUF7ySa7"
+
+[[kv_namespaces]]
+binding = "ENTITLEMENTS"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"

@@ -4,13 +4,23 @@
 
 import { el } from '../utils.js';
 import { t, toggleLang, getLang } from '../i18n.js';
-import { exportData, importData, getActiveAreas } from '../store.js';
+import { exportData, importData, getActiveAreas, getAllGoals, getFreeItemLimit, isPremiumUnlocked } from '../store.js';
 import { openAreaModal } from './area-modal.js';
 import { appState, retryDriveSync } from '../app.js';
 import { handleAuthClick, handleSignoutClick, isDriveAuthorized, getUserInfo } from '../services/drive-api.js';
+import { isPremiumPurchaseConfigured, startPremiumPurchase } from '../services/premium-api.js';
 
 export function renderSidebar(container, currentPage, onNavigate) {
   container.innerHTML = '';
+  const lang = getLang();
+  const freeItemLimit = getFreeItemLimit();
+  const allGoals = getAllGoals();
+  const usage = {
+    areas: getActiveAreas().length,
+    routines: allGoals.filter(goal => goal.category === 'routines').length,
+    projects: allGoals.filter(goal => goal.category === 'projects').length,
+    resources: allGoals.filter(goal => goal.category === 'resources').length
+  };
 
   // 閉じるボタン
   const closeBtn = el('button', {
@@ -122,6 +132,11 @@ export function renderSidebar(container, currentPage, onNavigate) {
     label: t('sidebar.dashboard'),
     icon: 'layout-dashboard'
   }, currentPage, onNavigate));
+  mainSection.appendChild(createNavItem({
+    id: 'today',
+    label: lang === 'ja' ? '今日見る' : 'Today',
+    icon: 'sun-medium'
+  }, currentPage, onNavigate));
   nav.appendChild(mainSection);
 
   // Areas セクション
@@ -190,6 +205,54 @@ export function renderSidebar(container, currentPage, onNavigate) {
 
   // データ管理セクション
   const dataSection = el('div', { className: 'sidebar-data-section' });
+
+  if (!isPremiumUnlocked()) {
+    const freePlanCard = el('div', {
+      className: 'glass-card',
+      style: 'padding: 12px; margin-bottom: 12px; width: 100%; background: rgba(255,255,255,0.03);'
+    },
+      el('div', { style: 'font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;' }, lang === 'ja' ? '無料枠の使用状況' : 'Free plan usage'),
+      el('div', { style: 'display: grid; gap: 6px; font-size: 11px; color: var(--text-secondary);' },
+        createFreeUsageRow('Areas', usage.areas, freeItemLimit),
+        createFreeUsageRow('Projects', usage.projects, freeItemLimit),
+        createFreeUsageRow('Resources', usage.resources, freeItemLimit),
+        createFreeUsageRow('Routines', usage.routines, freeItemLimit)
+      )
+    );
+    dataSection.appendChild(freePlanCard);
+
+    const purchaseConfigured = isPremiumPurchaseConfigured();
+    const purchaseMessage = el('div', {
+      style: 'margin-bottom: 8px; font-size: 10px; line-height: 1.5; color: var(--text-tertiary);'
+    }, lang === 'ja'
+      ? (purchaseConfigured ? 'Googleアカウントに紐づけて登録上限を解除します' : '現在、有料版の販売準備中です')
+      : (purchaseConfigured ? 'Unlock limits for your Google account' : 'Premium purchasing is being prepared'));
+    const licenseCard = el('div', {
+      className: 'glass-card',
+      style: 'padding: 12px; margin-bottom: 12px; width: 100%; background: rgba(255,255,255,0.03);'
+    },
+      el('div', { style: 'font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;' }, lang === 'ja' ? '有料枠を開放' : 'Unlock premium'),
+      purchaseMessage,
+      el('button', {
+        className: 'sidebar-action-btn',
+        style: 'justify-content: center; width: 100%; margin-top: 4px;',
+        disabled: !purchaseConfigured,
+        onClick: async () => {
+          if (!isDriveAuthorized()) {
+            alert(lang === 'ja' ? '先にGoogleへログインしてください' : 'Please sign in with Google first');
+            return;
+          }
+          try {
+            await startPremiumPurchase();
+          } catch (err) {
+            console.error('Checkout failed', err);
+            alert(lang === 'ja' ? '購入画面を開けませんでした。時間をおいて再度お試しください。' : 'Could not open checkout. Please try again.');
+          }
+        }
+      }, el('i', { 'data-lucide': 'credit-card' }), el('span', {}, lang === 'ja' ? (purchaseConfigured ? '有料版を購入' : '販売準備中') : (purchaseConfigured ? 'Buy premium' : 'Coming soon')))
+    );
+    dataSection.appendChild(licenseCard);
+  }
 
   // エクスポートボタン
   const exportBtn = el('button', {
@@ -297,6 +360,13 @@ function createNavItem(item, currentPage, onNavigate) {
   );
 
   return navItem;
+}
+
+function createFreeUsageRow(label, used, limit) {
+  return el('div', { style: 'display: flex; align-items: center; justify-content: space-between; gap: 8px;' },
+    el('span', {}, label),
+    el('span', { style: 'color: var(--text-primary); font-variant-numeric: tabular-nums;' }, `${used}/${limit}`)
+  );
 }
 
 function showToast(message) {

@@ -4,12 +4,14 @@
 
 import { renderSidebar } from './components/sidebar.js';
 import { renderDashboard } from './components/dashboard.js';
+import { renderTodayPage } from './components/today-page.js';
 import { renderAreaPage } from './components/area-page.js';
 import { renderMonthlyReview, flushMonthlyReviewAutosave } from './components/monthly-review.js';
 import { renderArchives } from './components/archives.js';
 import { openSyncConflictModal } from './components/sync-conflict-modal.js';
-import { migrateIfNeeded, getFullData, restoreFullData, getLastModified, initializeSampleDataIfNeeded, hasLocalUserChanges, markDataSynced, saveRecoveryBackup } from './store.js';
+import { migrateIfNeeded, getFullData, restoreFullData, getLastModified, initializeSampleDataIfNeeded, hasLocalUserChanges, markDataSynced, saveRecoveryBackup, setPremiumUnlocked } from './store.js';
 import { initDriveApi, isDriveAuthorized, downloadBackup, uploadBackup, findExistingBackupFile } from './services/drive-api.js';
+import { refreshPremiumEntitlement } from './services/premium-api.js';
 
 export const appState = { syncStatus: 'init' };
 let syncDebounceTimer = null;
@@ -43,10 +45,30 @@ export function triggerSidebarRender() {
 function handleDriveStatusChange(status) {
   appState.syncStatus = status;
   if (status === 'authorized') {
+    refreshPremiumAfterLogin()
+      .catch(err => console.warn('Premium status check failed', err))
+      .finally(triggerSidebarRender);
     performStartupSync();
   } else {
+    if (status === 'ready') setPremiumUnlocked(false);
     triggerSidebarRender();
   }
+}
+
+async function refreshPremiumAfterLogin() {
+  const purchaseCompleted = new URLSearchParams(window.location.search).get('purchase') === 'success';
+  const attempts = purchaseCompleted ? 6 : 1;
+
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    if (await refreshPremiumEntitlement()) {
+      if (purchaseCompleted) window.history.replaceState({}, '', window.location.pathname);
+      return true;
+    }
+    if (attempt < attempts - 1) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+  return false;
 }
 
 export function retryDriveSync() {
@@ -173,6 +195,9 @@ function renderPage() {
     case 'dashboard':
       renderDashboard(mainContentEl, navigateTo);
       break;
+    case 'today':
+      renderTodayPage(mainContentEl);
+      break;
     case 'monthly-review':
       renderMonthlyReview(mainContentEl);
       break;
@@ -193,6 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.classList.remove('light-theme');
   }
 
+  setPremiumUnlocked(false);
   migrateIfNeeded(); // v2からのマイグレーション
   initializeSampleDataIfNeeded(); // サンプルデータの投入
   initDriveApi(handleDriveStatusChange);

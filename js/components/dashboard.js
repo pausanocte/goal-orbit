@@ -19,6 +19,7 @@ let projectsStatusFilter = ['active', 'on-hold'];
 let activeWidgetDrag = null;
 const DRAG_SCROLL_EDGE_PX = 96;
 const DRAG_SCROLL_MAX_STEP = 18;
+const STALE_GOAL_DAYS = 14;
 
 function requestCompletedDate(currentValue = '') {
   const input = prompt('完了日を YYYY/MM/DD で入力してください。', currentValue ? formatDate(currentValue) : '');
@@ -46,6 +47,19 @@ function createDeleteGoalButton(goal, onDeleted) {
   },
     el('i', { 'data-lucide': 'trash-2', style: 'width: 14px; height: 14px;' })
   );
+}
+
+function getStaleGoals(goals) {
+  const now = Date.now();
+  const staleMs = STALE_GOAL_DAYS * 24 * 60 * 60 * 1000;
+
+  return goals
+    .filter(goal => !goal.archived)
+    .filter(goal => {
+      const updatedAt = Date.parse(goal.updatedAt || goal.createdAt || '');
+      return Number.isFinite(updatedAt) && now - updatedAt >= staleMs;
+    })
+    .sort((a, b) => Date.parse(a.updatedAt || 0) - Date.parse(b.updatedAt || 0));
 }
 
 function createInlineDateEditor(goal, field, onSaved, options = {}) {
@@ -187,6 +201,12 @@ export function renderDashboard(container, onNavigate) {
   const activeAreas = getActiveAreas();
   const activeRoutines = getAllGoals().filter(g => g.category === 'routines' && routinesStatusFilter.includes(g.status));
   const activeProjects = getAllGoals().filter(g => g.category === 'projects' && projectsStatusFilter.includes(g.status));
+  const staleGoals = getStaleGoals(getAllGoals()).slice(0, 5);
+  const staleTitle = t('dashboard.stale') === 'dashboard.stale' ? '停滞中の目標' : t('dashboard.stale');
+  const updatedDaysLabel = days => {
+    const template = t('dashboard.updatedDaysAgo', days);
+    return template === 'dashboard.updatedDaysAgo' ? `${days}日更新なし` : template;
+  };
 
   // ページヘッダー（右側に「目標を追加」ボタンを配置）
   const header = el('div', { className: 'page-header' },
@@ -669,6 +689,39 @@ export function renderDashboard(container, onNavigate) {
     dueSection.appendChild(dueList);
   }
 
+  let staleSection = null;
+  if (staleGoals.length > 0) {
+    staleSection = el('div', { className: 'glass-card recent-section' },
+      el('h2', { className: 'card-title' },
+        el('i', { 'data-lucide': 'clock-3' }),
+        el('span', {}, ` ${staleTitle}`)
+      )
+    );
+
+    const staleList = el('div', { className: 'recent-goals-list' });
+    staleGoals.forEach(goal => {
+      const area = getAreaById(goal.areaId);
+      const areaName = area ? area.name : 'Unknown';
+      const areaColor = area ? area.color : '#6366F1';
+      const daysSinceUpdate = Math.max(0, Math.floor((Date.now() - Date.parse(goal.updatedAt || goal.createdAt || Date.now())) / (24 * 60 * 60 * 1000)));
+
+      staleList.appendChild(
+        el('div', {
+          className: 'recent-goal-item',
+          onClick: () => openGoalModal(goal.id, { areaId: goal.areaId, category: goal.category }, () => renderDashboard(container, onNavigate))
+        },
+          el('div', { className: 'recent-goal-area-dot', style: `background: ${areaColor}` }),
+          el('div', { className: 'recent-goal-info' },
+            el('span', { className: 'recent-goal-title' }, goal.title),
+            el('span', { className: 'recent-goal-meta' }, `${areaName} · ${updatedDaysLabel(daysSinceUpdate)}`)
+          ),
+          el('div', { className: 'due-badge due-soon' }, updatedDaysLabel(daysSinceUpdate))
+        )
+      );
+    });
+    staleSection.appendChild(staleList);
+  }
+
   // ステータス分布
   const statusSection = el('div', { className: 'glass-card' },
     el('h2', { className: 'card-title' }, t('dashboard.byStatus')),
@@ -727,6 +780,7 @@ export function renderDashboard(container, onNavigate) {
     routines: routinesCol,
     projects: projectsCol,
     due_soon: dueSection,
+    stale: staleSection,
     status: statusSection,
     priority: prioritySection,
     recent: recentSection

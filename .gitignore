@@ -7,9 +7,13 @@ Desktop.ini
 .env
 .env.*
 !.env.example
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
 
 # Dependency directories
 node_modules/
+worker/.wrangler/
 
 # Build / temporary files
 dist/
@@ -25,3 +29,5 @@ orbit-cloud-backup*.json
 # Local test or scratch data
 *.local.json
 *.bak
+.tmp_import_loader.html
+.tmp_import_orbit.json

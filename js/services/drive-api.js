@@ -85,6 +85,10 @@ export function getUserInfo() {
   return currentUserInfo;
 }
 
+export function getGoogleAccessToken() {
+  return isAuthorized ? gapi.client.getToken()?.access_token || null : null;
+}
+
 export function initDriveApi(onStatusChange) {
   statusCallback = onStatusChange;
   

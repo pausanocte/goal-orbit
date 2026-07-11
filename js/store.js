@@ -15,7 +15,7 @@ const RECOVERY_BACKUP_KEY = 'orbit_recovery_backup';
 const FREE_ITEM_LIMIT = 4;
 const PREMIUM_UNLOCK_KEY = 'orbit_premium_unlocked';
 
-const DEFAULT_DASHBOARD_LAYOUT = ['areas', 'routines', 'projects', 'due_soon', 'status', 'priority', 'recent'];
+const DEFAULT_DASHBOARD_LAYOUT = ['areas', 'routines', 'projects', 'due_soon', 'stale', 'status', 'priority', 'recent'];
 
 function loadData(key) {
   try {
@@ -63,8 +63,10 @@ export function isPremiumUnlocked() {
 }
 
 export function setPremiumUnlocked(unlocked) {
-  localStorage.setItem(PREMIUM_UNLOCK_KEY, unlocked ? 'true' : 'false');
-  window.dispatchEvent(new Event('orbitDataChanged'));
+  const nextValue = unlocked ? 'true' : 'false';
+  if (localStorage.getItem(PREMIUM_UNLOCK_KEY) === nextValue) return;
+  localStorage.setItem(PREMIUM_UNLOCK_KEY, nextValue);
+  window.dispatchEvent(new Event('orbitPremiumChanged'));
 }
 
 export function getFreeItemLimit() {
