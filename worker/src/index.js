@@ -38,7 +38,6 @@ async function createCheckout(request, env) {
     success_url: `${env.ORBIT_APP_URL}?purchase=success`,
     cancel_url: `${env.ORBIT_APP_URL}?purchase=cancelled`,
     client_reference_id: user.sub,
-    customer_email: user.email,
     'line_items[0][price]': env.STRIPE_PRICE_ID,
     'line_items[0][quantity]': '1',
     'metadata[google_user_id]': user.sub

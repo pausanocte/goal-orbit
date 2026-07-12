@@ -29,6 +29,8 @@ globalThis.fetch = async (input, options = {}) => {
   if (url.includes('api.stripe.com/v1/checkout/sessions')) {
     assert.equal(options.headers.Authorization, 'Bearer sk_test_value');
     assert.match(String(options.body), /client_reference_id=google-user-1/);
+    assert.doesNotMatch(String(options.body), /customer_email/);
+    assert.doesNotMatch(String(options.body), /buyer%40example\.com/);
     return Response.json({ url: 'https://checkout.stripe.com/test' });
   }
   throw new Error(`Unexpected fetch: ${url}`);
