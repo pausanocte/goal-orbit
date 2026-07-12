@@ -2046,7 +2046,7 @@ select.form-input option {
 .routines-list .compact-list-header,
 .routines-list .dashboard-compact-item {
   display: grid;
-  grid-template-columns: 10px minmax(160px, 1fr) 96px 104px 104px 82px 82px 34px;
+  grid-template-columns: 10px minmax(160px, 1fr) 96px 104px 104px 112px 82px 82px 34px;
   align-items: center;
   gap: 8px;
   padding: 4px 8px;
@@ -2078,7 +2078,8 @@ select.form-input option {
 .routines-list .header-col-status,
 .routines-list .header-col-priority,
 .routines-list .header-col-start,
-.routines-list .header-col-end {
+.routines-list .header-col-end,
+.routines-list .header-col-routine {
   justify-self: start;
 }
 
@@ -2146,6 +2147,109 @@ select.form-input option {
 
 .dashboard-delete-goal-btn:hover {
   color: var(--danger, #ef4444);
+}
+
+.routine-check-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.routine-check-row .recent-goal-item {
+  min-width: 0;
+}
+
+.routine-check-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 6px 10px;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.routine-check-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.routine-check-btn:hover {
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.routine-check-btn.completed {
+  border-color: rgba(16, 185, 129, 0.45);
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.routine-check-btn.compact {
+  justify-self: start;
+  min-width: 104px;
+  padding: 3px 7px;
+  font-size: 0.64rem;
+}
+
+.routine-progress-chip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.routine-stat-text {
+  color: var(--text-tertiary);
+  font-size: 0.72rem;
+}
+
+.calendar-sync-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.025);
+  cursor: pointer;
+}
+
+.calendar-sync-checkbox input {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  accent-color: var(--accent-primary);
+  cursor: pointer;
+}
+
+.calendar-sync-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.calendar-sync-copy strong {
+  color: var(--text-primary);
+  font-size: 0.86rem;
+}
+
+.calendar-sync-copy small {
+  color: var(--text-tertiary);
+  font-size: 0.74rem;
+  line-height: 1.5;
 }
 
 /* Compact Badge style overrides in dashboard list */

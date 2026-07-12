@@ -4,7 +4,7 @@
 
 import { el, clearElement, STATUS_CONFIG, PRIORITY_CONFIG, formatDate, getSubtaskProgress, normalizeDateInput } from '../utils.js';
 import { t } from '../i18n.js';
-import { getStats, getDueSoonGoals, getActiveAreas, getAreaById, getActiveGoals, getAllGoals, updateGoal, toggleSubtask, getDashboardLayout, saveDashboardLayout, deleteGoal } from '../store.js';
+import { getStats, getDueSoonGoals, getActiveAreas, getAreaById, getActiveGoals, getAllGoals, updateGoal, toggleSubtask, getDashboardLayout, saveDashboardLayout, deleteGoal, getRoutineStats, toggleRoutineCompletion } from '../store.js';
 import { openGoalModal } from './goal-modal.js';
 import { openAreaModal } from './area-modal.js';
 
@@ -22,11 +22,11 @@ const DRAG_SCROLL_MAX_STEP = 18;
 const STALE_GOAL_DAYS = 14;
 
 function requestCompletedDate(currentValue = '') {
-  const input = prompt('完了日を YYYY/MM/DD で入力してください。', currentValue ? formatDate(currentValue) : '');
+  const input = prompt(t('common.completedDatePrompt'), currentValue ? formatDate(currentValue) : '');
   if (input === null) return null;
   const normalized = normalizeDateInput(input);
   if (!normalized) {
-    alert('完了日は YYYY/MM/DD で入力してください。');
+    alert(t('common.completedDateInputHelp'));
     return undefined;
   }
   return normalized;
@@ -71,7 +71,7 @@ function createInlineDateEditor(goal, field, onSaved, options = {}) {
       e.stopPropagation();
       const normalized = normalizeDateInput(e.target.value);
       if (e.target.value && !normalized) {
-        alert('日付は YYYY/MM/DD で入力してください。');
+        alert(t('common.dateInputHelp'));
         e.target.value = goal[field] ? formatDate(goal[field]) : '';
         return;
       }
@@ -352,7 +352,7 @@ export function renderDashboard(container, onNavigate) {
   if (sortedRoutines.length === 0) {
     routinesCol.appendChild(
       el('div', { className: 'empty-state small' },
-        el('p', {}, 'Routinesはありません')
+        el('p', {}, t('dashboard.noRoutines'))
       )
     );
   } else {
@@ -361,8 +361,9 @@ export function renderDashboard(container, onNavigate) {
     const listHeader = el('div', { className: 'compact-list-header' },
       el('span', { className: 'header-col-title' }, t('dashboard.colGoalArea')),
       el('span', { className: 'header-col-freq' }, t('dashboard.colFrequency')),
-      el('span', { className: 'header-col-start' }, '開始日'),
-      el('span', { className: 'header-col-end' }, '完了日'),
+      el('span', { className: 'header-col-start' }, t('common.startDate')),
+      el('span', { className: 'header-col-end' }, t('common.completedDate')),
+      el('span', { className: 'header-col-routine' }, t('routine.today')),
       el('span', { className: 'header-col-status' }, t('dashboard.colStatus')),
       el('span', { className: 'header-col-priority' }, t('dashboard.colPriority')),
       el('span', { className: 'header-col-actions' }, '')
@@ -371,12 +372,13 @@ export function renderDashboard(container, onNavigate) {
 
     sortedRoutines.forEach(goal => {
       const area = getAreaById(goal.areaId);
-      const areaName = area ? area.name : 'Unknown';
+      const areaName = area ? area.name : t('common.unknown');
       const areaColor = area ? area.color : '#6366F1';
       
       const freqText = (goal.frequency === 'custom' && goal.frequencyCustom)
         ? goal.frequencyCustom
         : (goal.frequency ? t(`frequency.${goal.frequency}`) : '');
+      const routineStats = getRoutineStats(goal);
 
       const statusConf = STATUS_CONFIG[goal.status] || STATUS_CONFIG.active;
       const statusSelect = el('select', {
@@ -429,7 +431,7 @@ export function renderDashboard(container, onNavigate) {
           e.stopPropagation();
           const val = e.target.value;
           if (val === 'custom') {
-            const customVal = prompt('カスタムの頻度を入力してください（例: 週3回、隔週など）:', goal.frequencyCustom || '');
+            const customVal = prompt(t('dashboard.customFrequencyPrompt'), goal.frequencyCustom || '');
             if (customVal !== null) {
               updateGoal(goal.id, { frequency: 'custom', frequencyCustom: customVal });
             }
@@ -458,6 +460,19 @@ export function renderDashboard(container, onNavigate) {
         frequencySelect,
         createInlineDateEditor(goal, 'startDate', () => renderDashboard(container, onNavigate)),
         createInlineDateEditor(goal, 'completedDate', () => renderDashboard(container, onNavigate)),
+        el('button', {
+          type: 'button',
+          className: `routine-check-btn compact${routineStats.completedToday ? ' completed' : ''}`,
+          title: routineStats.completedToday ? t('routine.doneToday') : t('routine.markDone'),
+          onClick: (event) => {
+            event.stopPropagation();
+            toggleRoutineCompletion(goal.id);
+            renderDashboard(container, onNavigate);
+          }
+        },
+          el('i', { 'data-lucide': routineStats.completedToday ? 'check-circle-2' : 'circle' }),
+          el('span', {}, t('routine.monthRate', routineStats.monthRate))
+        ),
         statusSelect,
         prioritySelect,
         createDeleteGoalButton(goal, () => renderDashboard(container, onNavigate))
@@ -525,7 +540,7 @@ export function renderDashboard(container, onNavigate) {
   if (sortedProjects.length === 0) {
     projectsCol.appendChild(
       el('div', { className: 'empty-state small' },
-        el('p', {}, 'Projectsはありません')
+        el('p', {}, t('dashboard.noProjects'))
       )
     );
   } else {
@@ -533,8 +548,8 @@ export function renderDashboard(container, onNavigate) {
     // 見出し（インデックス）行の追加
     const listHeader = el('div', { className: 'compact-list-header' },
       el('span', { className: 'header-col-title' }, t('dashboard.colGoalArea')),
-      el('span', { className: 'header-col-start' }, '開始日'),
-      el('span', { className: 'header-col-end' }, '完了日'),
+      el('span', { className: 'header-col-start' }, t('common.startDate')),
+      el('span', { className: 'header-col-end' }, t('common.completedDate')),
       el('span', { className: 'header-col-due' }, t('dashboard.colDueDate')),
       el('span', { className: 'header-col-progress' }, t('dashboard.colProgress')),
       el('span', { className: 'header-col-status' }, t('dashboard.colStatus')),
@@ -545,7 +560,7 @@ export function renderDashboard(container, onNavigate) {
 
     sortedProjects.forEach(goal => {
       const area = getAreaById(goal.areaId);
-      const areaName = area ? area.name : 'Unknown';
+      const areaName = area ? area.name : t('common.unknown');
       const areaColor = area ? area.color : '#6366F1';
       
       const progress = getSubtaskProgress(goal.subtasks);
@@ -558,17 +573,7 @@ export function renderDashboard(container, onNavigate) {
           )
         : el('span', {});
 
-      const dueInput = el('input', {
-        type: 'date',
-        value: goal.dueDate || '',
-        className: 'inline-edit-date',
-        style: 'background: transparent; border: 1px solid var(--border-subtle); border-radius: 4px; color: var(--text-secondary); font-size: 0.66rem; padding: 1px 4px; outline: none; width: 104px; cursor: pointer; font-family: inherit; color-scheme: dark; justify-self: start;',
-        onChange: (e) => {
-          updateGoal(goal.id, { dueDate: e.target.value || null });
-          renderDashboard(container, onNavigate);
-        },
-        onClick: (e) => e.stopPropagation()
-      });
+      const dueInput = createInlineDateEditor(goal, 'dueDate', () => renderDashboard(container, onNavigate));
 
       const statusConf = STATUS_CONFIG[goal.status] || STATUS_CONFIG.active;
       const statusSelect = el('select', {
@@ -656,7 +661,7 @@ export function renderDashboard(container, onNavigate) {
     const dueList = el('div', { className: 'due-soon-list' });
     dueSoon.forEach(goal => {
       const area = getAreaById(goal.areaId);
-      const areaName = area ? area.name : 'Unknown';
+      const areaName = area ? area.name : t('common.unknown');
       const areaColor = area ? area.color : '#6366F1';
 
       let dueLabel = '';
@@ -700,7 +705,7 @@ export function renderDashboard(container, onNavigate) {
     const staleList = el('div', { className: 'recent-goals-list' });
     staleGoals.forEach(goal => {
       const area = getAreaById(goal.areaId);
-      const areaName = area ? area.name : 'Unknown';
+      const areaName = area ? area.name : t('common.unknown');
       const areaColor = area ? area.color : '#6366F1';
       const daysSinceUpdate = Math.max(0, Math.floor((Date.now() - Date.parse(goal.updatedAt || goal.createdAt || Date.now())) / (24 * 60 * 60 * 1000)));
 
@@ -750,7 +755,7 @@ export function renderDashboard(container, onNavigate) {
     const list = el('div', { className: 'recent-goals-list' });
     for (const goal of stats.recentGoals) {
       const area = getAreaById(goal.areaId);
-      const areaName = area ? area.name : 'Unknown';
+      const areaName = area ? area.name : t('common.unknown');
       const areaColor = area ? area.color : '#6366F1';
 
       const item = el('div', {

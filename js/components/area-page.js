@@ -4,17 +4,17 @@
 
 import { el, clearElement, STATUS_CONFIG, PRIORITY_CONFIG, FREQUENCY_CONFIG, formatDate, getDaysUntilDue, getSubtaskProgress, CATEGORY_CONFIG, normalizeDateInput } from '../utils.js';
 import { t } from '../i18n.js';
-import { getAreaById, getGoalsByAreaAndCategory, deleteGoal, archiveGoal, toggleSubtask, deleteArea, updateGoal } from '../store.js';
+import { getAreaById, getGoalsByAreaAndCategory, deleteGoal, archiveGoal, toggleSubtask, deleteArea, updateGoal, getRoutineStats, toggleRoutineCompletion } from '../store.js';
 import { openGoalModal } from './goal-modal.js';
 import { openAreaModal } from './area-modal.js';
 
 function requestCompletedDate(currentValue = '') {
-  const input = prompt('完了日を YYYY/MM/DD で入力してください。', currentValue ? formatDate(currentValue) : '');
+  const input = prompt(t('common.completedDatePrompt'), currentValue ? formatDate(currentValue) : '');
   if (input === null) return null;
 
   const normalized = normalizeDateInput(input);
   if (!normalized) {
-    alert('完了日は YYYY/MM/DD で入力してください。');
+    alert(t('common.completedDateInputHelp'));
     return undefined;
   }
 
@@ -30,11 +30,11 @@ function createGoalDateSummary(goal) {
   },
     el('span', { className: 'goal-card-date' },
       el('i', { 'data-lucide': 'calendar' }),
-      el('span', {}, `開始: ${goal.startDate ? formatDate(goal.startDate) : '-'}`)
+      el('span', {}, `${t('common.start')}: ${goal.startDate ? formatDate(goal.startDate) : '-'}`)
     ),
     el('span', { className: 'goal-card-date' },
       el('i', { 'data-lucide': 'calendar-check-2' }),
-      el('span', {}, `完了: ${goal.completedDate ? formatDate(goal.completedDate) : '-'}`)
+      el('span', {}, `${t('common.completed')}: ${goal.completedDate ? formatDate(goal.completedDate) : '-'}`)
     )
   );
 }
@@ -461,6 +461,7 @@ function createGoalCard(goal, area, index, onRefresh) {
     const freqText = goal.frequency === 'custom' && goal.frequencyCustom
       ? goal.frequencyCustom
       : (goal.frequency ? t(freqConf.labelKey) : '');
+    const routineStats = getRoutineStats(goal);
 
     if (currentLayout === 'list') {
       const frequencySelect = el('select', {
@@ -470,7 +471,7 @@ function createGoalCard(goal, area, index, onRefresh) {
           e.stopPropagation();
           const val = e.target.value;
           if (val === 'custom') {
-            const customVal = prompt(t('modal.frequencyCustomPlaceholder') || 'カスタムの頻度を入力してください（例: 週3回、隔週など）:', goal.frequencyCustom || '');
+            const customVal = prompt(t('dashboard.customFrequencyPrompt'), goal.frequencyCustom || '');
             if (customVal !== null) {
               updateGoal(goal.id, { frequency: 'custom', frequencyCustom: customVal });
             }
@@ -499,6 +500,25 @@ function createGoalCard(goal, area, index, onRefresh) {
         )
       );
     }
+
+    dynamicWrapper.appendChild(
+      el('div', { className: 'routine-progress-chip' },
+        el('button', {
+          type: 'button',
+          className: `routine-check-btn${routineStats.completedToday ? ' completed' : ''}`,
+          onClick: (event) => {
+            event.stopPropagation();
+            toggleRoutineCompletion(goal.id);
+            onRefresh();
+          }
+        },
+          el('i', { 'data-lucide': routineStats.completedToday ? 'check-circle-2' : 'circle' }),
+          el('span', {}, routineStats.completedToday ? t('routine.doneToday') : t('routine.markDone'))
+        ),
+        el('span', { className: 'routine-stat-text' }, t('routine.monthRate', routineStats.monthRate)),
+        el('span', { className: 'routine-stat-text' }, t('routine.streak', routineStats.streak))
+      )
+    );
   }
 
   card.appendChild(dynamicWrapper);

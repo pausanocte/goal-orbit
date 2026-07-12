@@ -261,6 +261,59 @@ export function getGoalById(id) {
   return getAllGoals().find(g => g.id === id) || null;
 }
 
+function getLocalDateKey(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+export function getTodayDateKey() {
+  return getLocalDateKey();
+}
+
+export function getRoutineCompletionDates(goal) {
+  return Array.from(new Set(goal?.routineCompletions || []))
+    .filter(Boolean)
+    .sort();
+}
+
+export function isRoutineCompletedOn(goal, dateKey = getTodayDateKey()) {
+  return getRoutineCompletionDates(goal).includes(dateKey);
+}
+
+export function toggleRoutineCompletion(goalId, dateKey = getTodayDateKey()) {
+  const goal = getGoalById(goalId);
+  if (!goal || goal.category !== 'routines') return null;
+
+  const completions = getRoutineCompletionDates(goal);
+  const nextCompletions = completions.includes(dateKey)
+    ? completions.filter(value => value !== dateKey)
+    : [...completions, dateKey].sort();
+
+  return updateGoal(goalId, { routineCompletions: nextCompletions });
+}
+
+export function getRoutineStats(goal, referenceDate = new Date()) {
+  const completions = new Set(getRoutineCompletionDates(goal));
+  const todayKey = getLocalDateKey(referenceDate);
+  const monthPrefix = todayKey.slice(0, 7);
+  const monthCompleted = [...completions].filter(value => value.startsWith(monthPrefix)).length;
+  const dayOfMonth = referenceDate.getDate();
+
+  let streak = 0;
+  const cursor = new Date(referenceDate);
+  cursor.setHours(0, 0, 0, 0);
+  while (completions.has(getLocalDateKey(cursor))) {
+    streak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  return {
+    completedToday: completions.has(todayKey),
+    monthCompleted,
+    monthRate: dayOfMonth > 0 ? Math.round((monthCompleted / dayOfMonth) * 100) : 0,
+    streak
+  };
+}
+
 export function addGoal({ title, description, areaId, category, status = 'active', priority = 'medium', dueDate = null, startDate = null, completedDate = null, subtasks = [], frequency = null, frequencyCustom = null }) {
   if (!canAddGoal(category)) {
     throw new Error(`FREE_LIMIT_${category.toUpperCase()}_REACHED`);

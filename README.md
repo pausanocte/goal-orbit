@@ -43,6 +43,7 @@ https://yuyayasumi.github.io/goal-orbit/
 - Local edits are saved in the browser as you use the app.
 - Drive sync starts after Google login is available.
 - If local data and Drive data differ, Orbit now asks which one to keep instead of overwriting silently.
+- Google Calendar integration adds checked goals to the user's primary calendar as all-day events. Enable the Google Calendar API and include the `calendar.events` OAuth scope in the Google Cloud consent screen before publishing this feature.
 
 ## Premium purchase setup
 

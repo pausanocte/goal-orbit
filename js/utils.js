@@ -2,6 +2,8 @@
 // Orbit v3 - Utility Functions
 // ==========================================
 
+import { t } from './i18n.js';
+
 export function generateId() {
   return crypto.randomUUID?.() ??
     'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -12,6 +14,8 @@ export function generateId() {
 
 export function formatDate(isoString) {
   if (!isoString) return '';
+  const dateOnly = String(isoString).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (dateOnly) return `${dateOnly[1]}/${dateOnly[2]}/${dateOnly[3]}`;
   const d = new Date(isoString);
   return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
 }
@@ -165,13 +169,13 @@ export function createDatePicker(initialValue, onChange) {
       const sanitized = event.target.value.replace(/\D/g, '').slice(0, 8);
       event.target.value = formatCompactDateDisplay(sanitized);
       const parsed = parseCompactDate(sanitized);
-      event.target.setCustomValidity(sanitized && !parsed ? 'YYYY/MM/DDで入力してください' : '');
+      event.target.setCustomValidity(sanitized && !parsed ? t('common.dateInputHelp') : '');
       onChange?.(parsed);
     },
     onBlur: (event) => {
       const parsed = parseCompactDate(event.target.value);
       event.target.value = formatCompactDateDisplay(event.target.value);
-      event.target.setCustomValidity(event.target.value && !parsed ? 'YYYY/MM/DDで入力してください' : '');
+      event.target.setCustomValidity(event.target.value && !parsed ? t('common.dateInputHelp') : '');
     }
   });
 

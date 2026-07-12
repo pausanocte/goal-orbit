@@ -6,7 +6,7 @@ import { ORBIT_CONFIG } from '../config.js';
 
 const CLIENT_ID = ORBIT_CONFIG.googleClientId;
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-const SCOPES = 'https://www.googleapis.com/auth/drive.file email profile';
+const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/calendar.events email profile';
 const BACKUP_FILENAME = 'orbit-cloud-backup.json';
 const AUTH_SESSION_KEY = 'orbit_google_auth_session';
 const AUTO_LOGIN_KEY = 'orbit_google_auto_login';

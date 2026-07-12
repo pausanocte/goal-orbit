@@ -211,7 +211,7 @@ export function renderSidebar(container, currentPage, onNavigate) {
       className: 'glass-card',
       style: 'padding: 12px; margin-bottom: 12px; width: 100%; background: rgba(255,255,255,0.03);'
     },
-      el('div', { style: 'font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;' }, lang === 'ja' ? '無料枠の使用状況' : 'Free plan usage'),
+      el('div', { style: 'font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;' }, t('premium.freeUsage')),
       el('div', { style: 'display: grid; gap: 6px; font-size: 11px; color: var(--text-secondary);' },
         createFreeUsageRow('Areas', usage.areas, freeItemLimit),
         createFreeUsageRow('Projects', usage.projects, freeItemLimit),
@@ -224,14 +224,12 @@ export function renderSidebar(container, currentPage, onNavigate) {
     const purchaseConfigured = isPremiumPurchaseConfigured();
     const purchaseMessage = el('div', {
       style: 'margin-bottom: 8px; font-size: 10px; line-height: 1.5; color: var(--text-tertiary);'
-    }, lang === 'ja'
-      ? (purchaseConfigured ? 'Googleアカウントに紐づけて登録上限を解除します' : '現在、有料版の販売準備中です')
-      : (purchaseConfigured ? 'Unlock limits for your Google account' : 'Premium purchasing is being prepared'));
+    }, purchaseConfigured ? t('premium.unlockMessage') : t('premium.preparing'));
     const licenseCard = el('div', {
       className: 'glass-card',
       style: 'padding: 12px; margin-bottom: 12px; width: 100%; background: rgba(255,255,255,0.03);'
     },
-      el('div', { style: 'font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;' }, lang === 'ja' ? '有料枠を開放' : 'Unlock premium'),
+      el('div', { style: 'font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;' }, t('premium.unlock')),
       purchaseMessage,
       el('button', {
         className: 'sidebar-action-btn',
@@ -252,7 +250,7 @@ export function renderSidebar(container, currentPage, onNavigate) {
             alert(lang === 'ja' ? '購入画面を開けませんでした。時間をおいて再度お試しください。' : 'Could not open checkout. Please try again.');
           }
         }
-      }, el('i', { 'data-lucide': 'credit-card' }), el('span', {}, lang === 'ja' ? (purchaseConfigured ? '有料版を購入' : '販売準備中') : (purchaseConfigured ? 'Buy premium' : 'Coming soon')))
+      }, el('i', { 'data-lucide': 'credit-card' }), el('span', {}, purchaseConfigured ? t('premium.buy') : t('premium.comingSoon')))
     );
     dataSection.appendChild(licenseCard);
   }

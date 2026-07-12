@@ -164,11 +164,11 @@ function createArchivedAreaCard(area, index, onRefresh) {
     el('div', { className: 'goal-card-meta' },
       el('span', { className: 'goal-card-date' },
         el('i', { 'data-lucide': 'calendar' }),
-        el('span', {}, `開始: ${area.startDate ? formatDate(area.startDate) : '-'}`)
+        el('span', {}, `${t('common.start')}: ${area.startDate ? formatDate(area.startDate) : '-'}`)
       ),
       el('span', { className: 'goal-card-date' },
         el('i', { 'data-lucide': 'clock' }),
-        el('span', {}, `完了: ${area.completedDate ? formatDate(area.completedDate) : '-'}`)
+        el('span', {}, `${t('common.completed')}: ${area.completedDate ? formatDate(area.completedDate) : '-'}`)
       )
     )
   );
@@ -178,7 +178,7 @@ function createArchivedAreaCard(area, index, onRefresh) {
 
 function createArchiveCard(goal, index, onRefresh) {
   const area = getAreaById(goal.areaId);
-  const areaName = area ? area.name : 'Unknown';
+  const areaName = area ? area.name : t('common.unknown');
   const areaColor = area ? area.color : '#6366F1';
   
   const priorityConf = PRIORITY_CONFIG[goal.priority] || { labelKey: 'priority.medium', color: '#FBBF24' };

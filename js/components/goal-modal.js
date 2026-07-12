@@ -6,6 +6,7 @@ import { el, STATUS_CONFIG, PRIORITY_CONFIG, FREQUENCY_CONFIG, CATEGORY_CONFIG, 
 import { t, formatYearMonthI18n } from '../i18n.js';
 import { addGoal, updateGoal, getGoalById, getActiveAreas, canAddGoal, getReviewsByGoalId } from '../store.js';
 import { openAreaModal } from './area-modal.js';
+import { canCreateCalendarEvent, upsertGoalCalendarEvent } from '../services/calendar-api.js';
 
 let modalOverlay = null;
 let removeEscapeClose = null;
@@ -78,9 +79,9 @@ export function openGoalModal(goalId, defaultArea = null, onSave = null) {
   modal.appendChild(header);
 
   // フォーム
-  const form = el('form', { className: 'modal-form', onSubmit: (e) => {
+  const form = el('form', { className: 'modal-form', onSubmit: async (e) => {
     e.preventDefault();
-    handleSubmit(e.target, isEdit, goalId, onSave, {
+    await handleSubmit(e.target, isEdit, goalId, onSave, {
       startDatePicker,
       completedDatePicker,
       dueDatePicker
@@ -324,6 +325,25 @@ export function openGoalModal(goalId, defaultArea = null, onSave = null) {
   const subtasksHidden = el('input', { type: 'hidden', name: 'subtasksData', value: '' });
   form.appendChild(subtasksHidden);
 
+  const calendarCheckbox = el('input', {
+    type: 'checkbox',
+    name: 'addToCalendar',
+    id: 'goal-add-to-calendar',
+    checked: goal?.googleCalendarEventId ? 'checked' : undefined
+  });
+  form.appendChild(
+    el('label', {
+      className: 'form-field calendar-sync-option',
+      htmlFor: 'goal-add-to-calendar'
+    },
+      el('span', { className: 'calendar-sync-checkbox' }, calendarCheckbox),
+      el('span', { className: 'calendar-sync-copy' },
+        el('strong', {}, t('calendar.addToCalendar')),
+        el('small', {}, t('calendar.addToCalendarHelp'))
+      )
+    )
+  );
+
   // ボタン
   const buttons = el('div', { className: 'modal-buttons' },
     el('button', { type: 'button', className: 'btn btn-ghost', onClick: closeGoalModal }, t('modal.cancel')),
@@ -361,7 +381,7 @@ export function closeGoalModal() {
   }
 }
 
-function handleSubmit(form, isEdit, goalId, onSave, pickers = {}) {
+async function handleSubmit(form, isEdit, goalId, onSave, pickers = {}) {
   const data = {
     title: form.title.value.trim(),
     description: form.description.value.trim(),
@@ -408,21 +428,45 @@ function handleSubmit(form, isEdit, goalId, onSave, pickers = {}) {
   }
 
   if (data.status === 'completed' && !data.completedDate) {
-    alert('完了ステータスにするには完了日を入力してください。');
+    alert(t('common.completedDateInputHelp'));
     return;
   }
 
+  if (form.addToCalendar?.checked && !data.dueDate && !data.startDate && !data.completedDate) {
+    alert(t('calendar.dateRequired'));
+    return;
+  }
+
+  let savedGoal = null;
   if (isEdit) {
-    updateGoal(goalId, data);
+    savedGoal = updateGoal(goalId, data);
   } else {
     try {
-      addGoal(data);
+      savedGoal = addGoal(data);
     } catch (err) {
       if (err?.message === `FREE_LIMIT_${data.category.toUpperCase()}_REACHED`) {
         alert(`${t('limit.goalReached', t(CATEGORY_CONFIG[data.category].labelKey))}\n${t('limit.unlockHint')}`);
         return;
       }
       throw err;
+    }
+  }
+
+  if (form.addToCalendar?.checked && savedGoal) {
+    if (!canCreateCalendarEvent(savedGoal)) {
+      alert(t('calendar.dateRequired'));
+      return;
+    }
+
+    try {
+      const event = await upsertGoalCalendarEvent(savedGoal);
+      updateGoal(savedGoal.id, {
+        googleCalendarEventId: event.id || savedGoal.googleCalendarEventId || null,
+        googleCalendarEventLink: event.htmlLink || savedGoal.googleCalendarEventLink || null
+      });
+    } catch (err) {
+      console.error('Calendar sync failed', err);
+      alert(`${t('calendar.addFailed')}\n\n${err.message || ''}`);
     }
   }
 

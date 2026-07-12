@@ -3,40 +3,26 @@
 // ==========================================
 
 import { el, clearElement, formatDate } from '../utils.js';
-import { getLang } from '../i18n.js';
-import { getActiveGoals, getAreaById, getDueSoonGoals } from '../store.js';
+import { t } from '../i18n.js';
+import { getActiveGoals, getAreaById, getDueSoonGoals, getRoutineStats, toggleRoutineCompletion } from '../store.js';
 import { openGoalModal } from './goal-modal.js';
 
 const STALE_GOAL_DAYS = 14;
 
 function uiText() {
-  return getLang() === 'ja'
-    ? {
-        title: '今日見る',
-        subtitle: '今日確認したい目標をすばやく見返せます',
-        highPriority: '高優先で進める目標',
-        dueSoonEmpty: '直近で期限が近い目標はありません',
-        highPriorityEmpty: '高優先の進行中目標はありません',
-        routinesEmpty: '今日確認したいRoutineはありません',
-        staleTitle: '停滞中の目標',
-        staleEmpty: '長く更新していない目標はありません',
-        updatedDaysAgo: days => `${days}日更新なし`,
-        dueDate: '期限日',
-        frequency: '頻度'
-      }
-    : {
-        title: 'Today',
-        subtitle: 'A focused view of the goals worth checking today',
-        highPriority: 'High Priority',
-        dueSoonEmpty: 'Nothing urgent right now',
-        highPriorityEmpty: 'No high-priority active goals',
-        routinesEmpty: 'No routines to check today',
-        staleTitle: 'Stale Goals',
-        staleEmpty: 'No stale goals right now',
-        updatedDaysAgo: days => `No update for ${days} days`,
-        dueDate: 'Due Date',
-        frequency: 'Frequency'
-      };
+  return {
+    title: t('today.title'),
+    subtitle: t('today.subtitle'),
+    highPriority: t('today.highPriority'),
+    dueSoonEmpty: t('today.dueSoonEmpty'),
+    highPriorityEmpty: t('today.highPriorityEmpty'),
+    routinesEmpty: t('today.routinesEmpty'),
+    staleTitle: t('today.staleTitle'),
+    staleEmpty: t('today.staleEmpty'),
+    updatedDaysAgo: days => t('today.updatedDaysAgo', days),
+    dueDate: t('dashboard.colDueDate'),
+    frequency: t('dashboard.colFrequency')
+  };
 }
 
 function getStaleGoals(goals) {
@@ -54,27 +40,48 @@ function getStaleGoals(goals) {
 
 function createGoalListItem(goal, onRefresh, text) {
   const area = getAreaById(goal.areaId);
-  const areaName = area ? area.name : 'Unknown';
+  const areaName = area ? area.name : t('common.unknown');
   const areaColor = area ? area.color : '#6366F1';
+  const routineStats = goal.category === 'routines' ? getRoutineStats(goal) : null;
 
   const meta = [areaName];
   if (goal.dueDate) meta.push(`${text.dueDate}: ${formatDate(goal.dueDate)}`);
   if (goal.frequency) meta.push(`${text.frequency}: ${goal.frequencyCustom || goal.frequency}`);
+  if (routineStats) meta.push(t('routine.monthRate', routineStats.monthRate));
+  if (routineStats?.streak > 0) meta.push(t('routine.streak', routineStats.streak));
   if (goal.updatedAt) {
     const days = Math.max(0, Math.floor((Date.now() - Date.parse(goal.updatedAt)) / (24 * 60 * 60 * 1000)));
     meta.push(text.updatedDaysAgo(days));
   }
 
-  return el('button', {
+  const content = el('button', {
     type: 'button',
-    className: 'recent-goal-item',
+    className: `recent-goal-item${routineStats?.completedToday ? ' routine-done' : ''}`,
     style: 'width: 100%; text-align: left; background: transparent;',
     onClick: () => openGoalModal(goal.id, { areaId: goal.areaId, category: goal.category }, onRefresh)
   },
     el('div', { className: 'recent-goal-area-dot', style: `background: ${areaColor}` }),
     el('div', { className: 'recent-goal-info' },
       el('span', { className: 'recent-goal-title' }, goal.title),
-      el('span', { className: 'recent-goal-meta' }, meta.join(' · '))
+      el('span', { className: 'recent-goal-meta' }, meta.join(' - '))
+    )
+  );
+
+  if (!routineStats) return content;
+
+  return el('div', { className: 'routine-check-row' },
+    content,
+    el('button', {
+      type: 'button',
+      className: `routine-check-btn${routineStats.completedToday ? ' completed' : ''}`,
+      onClick: (event) => {
+        event.stopPropagation();
+        toggleRoutineCompletion(goal.id);
+        onRefresh();
+      }
+    },
+      el('i', { 'data-lucide': routineStats.completedToday ? 'check-circle-2' : 'circle' }),
+      el('span', {}, routineStats.completedToday ? t('routine.doneToday') : t('routine.markDone'))
     )
   );
 }
@@ -134,9 +141,9 @@ export function renderTodayPage(container) {
   );
 
   const grid = el('div', { className: 'today-page-grid' });
-  grid.appendChild(createSection(getLang() === 'ja' ? '期限が近い目標' : 'Due Soon', 'alarm-clock', dueSoon, text.dueSoonEmpty, rerender, text));
+  grid.appendChild(createSection(t('dashboard.dueSoon'), 'alarm-clock', dueSoon, text.dueSoonEmpty, rerender, text));
   grid.appendChild(createSection(text.highPriority, 'flag', highPriority, text.highPriorityEmpty, rerender, text));
-  grid.appendChild(createSection('Routines', 'repeat', routines, text.routinesEmpty, rerender, text));
+  grid.appendChild(createSection(t('cat.routines'), 'repeat', routines, text.routinesEmpty, rerender, text));
   grid.appendChild(createSection(text.staleTitle, 'clock-3', staleGoals, text.staleEmpty, rerender, text));
 
   container.appendChild(grid);
