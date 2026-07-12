@@ -328,7 +328,7 @@ export function renderMonthlyReview(container) {
       };
       const doneDays = getRoutineCompletionDaysInMonth(goal, selectedMonth);
       const doneDaysText = doneDays.length > 0
-        ? t('routine.completedDays', doneDays.join(', '))
+        ? t('routine.completedCount', doneDays.length)
         : t('routine.noCompletedDaysInMonth');
       metaText = `${t('dashboard.colFrequency')}: ${frequencyMap[goal.frequency] || goal.frequency} / ${doneDaysText}`;
     } else if (goal.category === 'projects') {

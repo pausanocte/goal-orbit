@@ -2056,7 +2056,7 @@ select.form-input option {
 .routines-list .compact-list-header,
 .routines-list .dashboard-compact-item {
   display: grid;
-  grid-template-columns: 10px minmax(160px, 1fr) 96px 104px 104px 82px 82px 34px;
+  grid-template-columns: 10px minmax(160px, 1fr) 96px 104px 104px 50px 82px 82px 34px;
   align-items: center;
   gap: 8px;
   padding: 4px 8px;
@@ -2088,7 +2088,8 @@ select.form-input option {
 .routines-list .header-col-status,
 .routines-list .header-col-priority,
 .routines-list .header-col-start,
-.routines-list .header-col-end {
+.routines-list .header-col-end,
+.routines-list .header-col-routine {
   justify-self: start;
 }
 
@@ -2218,6 +2219,18 @@ select.form-input option {
   background: rgba(16, 185, 129, 0.1);
 }
 
+.routine-check-btn.compact {
+  justify-self: start;
+  width: 30px;
+  height: 28px;
+  padding: 0;
+}
+
+.routine-check-btn.compact svg {
+  width: 14px;
+  height: 14px;
+}
+
 .routine-progress-chip {
   display: flex;
   align-items: center;
@@ -2239,17 +2252,57 @@ select.form-input option {
 }
 
 .routine-history-month {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
   padding: 12px;
   border: 1px solid var(--border-subtle);
   color: var(--text-secondary);
   font-size: 0.82rem;
 }
 
+.routine-history-month-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
 .routine-history-month strong {
   color: var(--text-primary);
+}
+
+.routine-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.routine-calendar-weekday {
+  color: var(--text-tertiary);
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.routine-calendar-day {
+  min-height: 28px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.routine-calendar-day.empty {
+  visibility: hidden;
+}
+
+.routine-calendar-day.completed {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  font-weight: 700;
 }
 
 .calendar-sync-option {

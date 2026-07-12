@@ -4,7 +4,7 @@
 
 import { el, clearElement, STATUS_CONFIG, PRIORITY_CONFIG, formatDate, getSubtaskProgress, normalizeDateInput } from '../utils.js';
 import { t } from '../i18n.js';
-import { getStats, getDueSoonGoals, getActiveAreas, getAreaById, getActiveGoals, getAllGoals, updateGoal, toggleSubtask, getDashboardLayout, saveDashboardLayout, deleteGoal } from '../store.js';
+import { getStats, getDueSoonGoals, getActiveAreas, getAreaById, getActiveGoals, getAllGoals, updateGoal, toggleSubtask, getDashboardLayout, saveDashboardLayout, deleteGoal, isRoutineCompletedOn, toggleRoutineCompletion } from '../store.js';
 import { openGoalModal } from './goal-modal.js';
 import { openAreaModal } from './area-modal.js';
 
@@ -363,6 +363,7 @@ export function renderDashboard(container, onNavigate) {
       el('span', { className: 'header-col-freq' }, t('dashboard.colFrequency')),
       el('span', { className: 'header-col-start' }, t('common.startDate')),
       el('span', { className: 'header-col-end' }, t('common.completedDate')),
+      el('span', { className: 'header-col-routine' }, t('routine.today')),
       el('span', { className: 'header-col-status' }, t('dashboard.colStatus')),
       el('span', { className: 'header-col-priority' }, t('dashboard.colPriority')),
       el('span', { className: 'header-col-actions' }, '')
@@ -377,6 +378,7 @@ export function renderDashboard(container, onNavigate) {
       const freqText = (goal.frequency === 'custom' && goal.frequencyCustom)
         ? goal.frequencyCustom
         : (goal.frequency ? t(`frequency.${goal.frequency}`) : '');
+      const completedToday = isRoutineCompletedOn(goal);
 
       const statusConf = STATUS_CONFIG[goal.status] || STATUS_CONFIG.active;
       const statusSelect = el('select', {
@@ -458,6 +460,18 @@ export function renderDashboard(container, onNavigate) {
         frequencySelect,
         createInlineDateEditor(goal, 'startDate', () => renderDashboard(container, onNavigate)),
         createInlineDateEditor(goal, 'completedDate', () => renderDashboard(container, onNavigate)),
+        el('button', {
+          type: 'button',
+          className: `routine-check-btn compact${completedToday ? ' completed' : ''}`,
+          title: completedToday ? t('routine.doneToday') : t('routine.markDone'),
+          onClick: (event) => {
+            event.stopPropagation();
+            toggleRoutineCompletion(goal.id);
+            renderDashboard(container, onNavigate);
+          }
+        },
+          el('i', { 'data-lucide': completedToday ? 'check-circle-2' : 'circle' })
+        ),
         statusSelect,
         prioritySelect,
         createDeleteGoalButton(goal, () => renderDashboard(container, onNavigate))

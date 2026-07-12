@@ -74,16 +74,53 @@ function createRoutineCompletionHistory(goal) {
   Array.from(byMonth.entries())
     .sort((a, b) => b[0].localeCompare(a[0]))
     .forEach(([yearMonth, days]) => {
-      list.appendChild(
-        el('div', { className: 'routine-history-month glass-card' },
-          el('strong', {}, formatYearMonthI18n(yearMonth)),
-          el('span', {}, t('routine.completedDays', days.sort((a, b) => a - b).join(', ')))
-        )
-      );
+      list.appendChild(createRoutineMonthCalendar(yearMonth, days));
     });
 
   section.appendChild(list);
   return section;
+}
+
+function createRoutineMonthCalendar(yearMonth, days) {
+  const [year, month] = yearMonth.split('-').map(Number);
+  const completedDays = new Set(days);
+  const firstWeekday = new Date(year, month - 1, 1).getDay();
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const weekdayKeys = [
+    'weekday.sun',
+    'weekday.mon',
+    'weekday.tue',
+    'weekday.wed',
+    'weekday.thu',
+    'weekday.fri',
+    'weekday.sat'
+  ];
+
+  const grid = el('div', { className: 'routine-calendar-grid' });
+  weekdayKeys.forEach(key => {
+    grid.appendChild(el('span', { className: 'routine-calendar-weekday' }, t(key)));
+  });
+
+  for (let index = 0; index < firstWeekday; index += 1) {
+    grid.appendChild(el('span', { className: 'routine-calendar-day empty' }, ''));
+  }
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    grid.appendChild(
+      el('span', {
+        className: `routine-calendar-day${completedDays.has(day) ? ' completed' : ''}`,
+        title: completedDays.has(day) ? t('routine.doneToday') : ''
+      }, String(day))
+    );
+  }
+
+  return el('div', { className: 'routine-history-month glass-card' },
+    el('div', { className: 'routine-history-month-header' },
+      el('strong', {}, formatYearMonthI18n(yearMonth)),
+      el('span', {}, t('routine.completedCount', completedDays.size))
+    ),
+    grid
+  );
 }
 
 export function openGoalModal(goalId, defaultArea = null, onSave = null) {
