@@ -201,7 +201,8 @@ export function renderSidebar(container, currentPage, onNavigate) {
 
   nav.appendChild(otherSection);
 
-  container.appendChild(nav);
+  const scrollArea = el('div', { className: 'sidebar-scroll-area' });
+  scrollArea.appendChild(nav);
 
   // データ管理セクション
   const dataSection = el('div', { className: 'sidebar-data-section' });
@@ -302,7 +303,8 @@ export function renderSidebar(container, currentPage, onNavigate) {
   dataSection.appendChild(importBtn);
   dataSection.appendChild(importInput);
 
-  container.appendChild(dataSection);
+  scrollArea.appendChild(dataSection);
+  container.appendChild(scrollArea);
 
   // テーマ切り替えボタン
   const currentTheme = localStorage.getItem('orbit_theme') || 'dark';

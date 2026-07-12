@@ -98,11 +98,11 @@ body.light-theme {
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
 }
 
-body.light-theme .sidebar::-webkit-scrollbar-thumb {
+body.light-theme .sidebar-scroll-area::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.12);
 }
 
-body.light-theme .sidebar::-webkit-scrollbar-thumb:hover {
+body.light-theme .sidebar-scroll-area::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.22);
 }
 
@@ -140,26 +140,33 @@ body {
   border-right: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden;
   position: relative;
   z-index: 10;
   transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.sidebar::-webkit-scrollbar {
+.sidebar-scroll-area {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 10px;
+}
+
+.sidebar-scroll-area::-webkit-scrollbar {
   width: 5px;
 }
 
-.sidebar::-webkit-scrollbar-track {
+.sidebar-scroll-area::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.sidebar::-webkit-scrollbar-thumb {
+.sidebar-scroll-area::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 3px;
 }
 
-.sidebar::-webkit-scrollbar-thumb:hover {
+.sidebar-scroll-area::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
 }
 
@@ -1168,6 +1175,7 @@ body {
 .icon-btn {
   width: 32px;
   height: 32px;
+  padding: 0;
   border-radius: var(--radius-sm);
   border: none;
   background: transparent;
@@ -1182,6 +1190,8 @@ body {
 .icon-btn svg {
   width: 15px;
   height: 15px;
+  display: block;
+  flex-shrink: 0;
 }
 
 .icon-btn:hover {
@@ -2137,11 +2147,19 @@ select.form-input option {
 
 .dashboard-delete-goal-btn {
   justify-self: end;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
   width: 28px;
   height: 28px;
   min-width: 28px;
   padding: 0 !important;
   color: var(--text-tertiary);
+}
+
+.dashboard-delete-goal-btn svg {
+  display: block;
+  flex-shrink: 0;
 }
 
 .dashboard-delete-goal-btn:hover {
