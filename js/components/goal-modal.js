@@ -4,7 +4,7 @@
 
 import { el, STATUS_CONFIG, PRIORITY_CONFIG, FREQUENCY_CONFIG, CATEGORY_CONFIG, generateId, createDatePicker, registerEscapeClose } from '../utils.js';
 import { t, formatYearMonthI18n } from '../i18n.js';
-import { addGoal, updateGoal, getGoalById, getActiveAreas, canAddGoal, getReviewsByGoalId, getRoutineCompletionDates } from '../store.js';
+import { addGoal, updateGoal, getGoalById, getActiveAreas, canAddGoal, getReviewsByGoalId, getRoutineCompletionDates, toggleRoutineCompletion } from '../store.js';
 import { openAreaModal } from './area-modal.js';
 import { canCreateCalendarEvent, upsertGoalCalendarEvent } from '../services/calendar-api.js';
 
@@ -48,18 +48,17 @@ function createGoalReviewHistory(goal) {
   return section;
 }
 
+function getCurrentYearMonthKey() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
 function createRoutineCompletionHistory(goal) {
   const dates = getRoutineCompletionDates(goal);
   const section = el('div', { className: 'form-field routine-completion-history' },
-    el('label', { className: 'form-label' }, t('routine.completionHistory'))
+    el('label', { className: 'form-label' }, t('routine.completionHistory')),
+    el('small', { className: 'routine-history-help' }, t('routine.completionHistoryHelp'))
   );
-
-  if (dates.length === 0) {
-    section.appendChild(
-      el('div', { className: 'glass-card routine-history-empty' }, t('routine.noCompletionHistory'))
-    );
-    return section;
-  }
 
   const byMonth = new Map();
   dates.forEach(dateKey => {
@@ -69,19 +68,27 @@ function createRoutineCompletionHistory(goal) {
     if (!byMonth.has(yearMonth)) byMonth.set(yearMonth, []);
     byMonth.get(yearMonth).push(day);
   });
+  if (!byMonth.has(getCurrentYearMonthKey())) {
+    byMonth.set(getCurrentYearMonthKey(), []);
+  }
 
   const list = el('div', { className: 'routine-history-list' });
   Array.from(byMonth.entries())
     .sort((a, b) => b[0].localeCompare(a[0]))
     .forEach(([yearMonth, days]) => {
-      list.appendChild(createRoutineMonthCalendar(yearMonth, days));
+      list.appendChild(createRoutineMonthCalendar(goal.id, yearMonth, days, () => {
+        const currentGoal = getGoalById(goal.id);
+        if (!currentGoal) return;
+        section.replaceWith(createRoutineCompletionHistory(currentGoal));
+        if (window.lucide) window.lucide.createIcons();
+      }));
     });
 
   section.appendChild(list);
   return section;
 }
 
-function createRoutineMonthCalendar(yearMonth, days) {
+function createRoutineMonthCalendar(goalId, yearMonth, days, onChanged) {
   const [year, month] = yearMonth.split('-').map(Number);
   const completedDays = new Set(days);
   const firstWeekday = new Date(year, month - 1, 1).getDay();
@@ -106,10 +113,18 @@ function createRoutineMonthCalendar(yearMonth, days) {
   }
 
   for (let day = 1; day <= daysInMonth; day += 1) {
+    const dateKey = `${yearMonth}-${String(day).padStart(2, '0')}`;
+    const completed = completedDays.has(day);
     grid.appendChild(
-      el('span', {
-        className: `routine-calendar-day${completedDays.has(day) ? ' completed' : ''}`,
-        title: completedDays.has(day) ? t('routine.doneToday') : ''
+      el('button', {
+        type: 'button',
+        className: `routine-calendar-day${completed ? ' completed' : ''}`,
+        title: completed ? t('routine.removeCompletedDay') : t('routine.addCompletedDay'),
+        onClick: (event) => {
+          event.stopPropagation();
+          toggleRoutineCompletion(goalId, dateKey);
+          onChanged();
+        }
       }, String(day))
     );
   }

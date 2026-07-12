@@ -2245,6 +2245,15 @@ select.form-input option {
   font-size: 0.82rem;
 }
 
+.routine-history-help {
+  display: block;
+  color: var(--text-tertiary);
+  font-size: 0.74rem;
+  line-height: 1.5;
+  margin-top: -4px;
+  margin-bottom: 10px;
+}
+
 .routine-history-list {
   display: flex;
   flex-direction: column;
@@ -2285,17 +2294,28 @@ select.form-input option {
 
 .routine-calendar-day {
   min-height: 28px;
+  border: 1px solid transparent;
   border-radius: 999px;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
   font-size: 0.76rem;
   font-variant-numeric: tabular-nums;
+  transition: all var(--transition-fast);
 }
 
 .routine-calendar-day.empty {
   visibility: hidden;
+}
+
+.routine-calendar-day:not(.empty):hover {
+  background: var(--surface-glass-hover);
+  border-color: var(--border-light);
+  color: var(--text-primary);
 }
 
 .routine-calendar-day.completed {
