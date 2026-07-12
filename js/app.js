@@ -17,6 +17,7 @@ export const appState = { syncStatus: 'init' };
 let syncDebounceTimer = null;
 let syncReady = false;
 let startupSyncInProgress = false;
+const SYNC_CONFLICT_TOLERANCE_MS = 30 * 1000;
 
 let currentPage = 'dashboard';
 
@@ -97,6 +98,11 @@ async function performStartupSync() {
       } else if (!hasLocalUserChanges()) {
         restoreFullData(driveData);
         renderPage();
+      } else if (!isMeaningfullyNewer(driveModified, localModified)) {
+        saveRecoveryBackup(driveData);
+        const uploaded = await uploadBackup(localData);
+        if (!uploaded) throw new Error('DRIVE_BACKUP_UPLOAD_FAILED');
+        markDataSynced(localModified);
       } else {
         const choice = await openSyncConflictModal({ localModified, driveModified });
 
@@ -180,6 +186,10 @@ function dataSetsMatch(localData, driveData) {
     dashboardLayout: data.dashboardLayout || []
   });
   return JSON.stringify(comparable(localData)) === JSON.stringify(comparable(driveData));
+}
+
+function isMeaningfullyNewer(candidateModified, baseModified) {
+  return candidateModified - baseModified > SYNC_CONFLICT_TOLERANCE_MS;
 }
 
 function renderPage() {
