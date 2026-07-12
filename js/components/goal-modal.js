@@ -53,6 +53,27 @@ function getCurrentYearMonthKey() {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
 
+function getRoutineHistoryStartMonth(goal, dates) {
+  if (goal.startDate) return goal.startDate.slice(0, 7);
+  if (dates.length > 0) return dates[0].slice(0, 7);
+  return getCurrentYearMonthKey();
+}
+
+function getYearMonthRange(startYearMonth, endYearMonth) {
+  const [startYear, startMonth] = startYearMonth.split('-').map(Number);
+  const [endYear, endMonth] = endYearMonth.split('-').map(Number);
+  const cursor = new Date(startYear, startMonth - 1, 1);
+  const end = new Date(endYear, endMonth - 1, 1);
+  const months = [];
+
+  while (cursor <= end) {
+    months.push(`${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`);
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+
+  return months;
+}
+
 function createRoutineCompletionHistory(goal) {
   const dates = getRoutineCompletionDates(goal);
   const section = el('div', { className: 'form-field routine-completion-history' },
@@ -68,9 +89,11 @@ function createRoutineCompletionHistory(goal) {
     if (!byMonth.has(yearMonth)) byMonth.set(yearMonth, []);
     byMonth.get(yearMonth).push(day);
   });
-  if (!byMonth.has(getCurrentYearMonthKey())) {
-    byMonth.set(getCurrentYearMonthKey(), []);
-  }
+  const currentYearMonth = getCurrentYearMonthKey();
+  const startYearMonth = getRoutineHistoryStartMonth(goal, dates);
+  getYearMonthRange(startYearMonth, currentYearMonth).forEach(yearMonth => {
+    if (!byMonth.has(yearMonth)) byMonth.set(yearMonth, []);
+  });
 
   const list = el('div', { className: 'routine-history-list' });
   Array.from(byMonth.entries())
