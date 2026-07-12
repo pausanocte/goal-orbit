@@ -2046,7 +2046,7 @@ select.form-input option {
 .routines-list .compact-list-header,
 .routines-list .dashboard-compact-item {
   display: grid;
-  grid-template-columns: 10px minmax(160px, 1fr) 96px 104px 104px 112px 82px 82px 34px;
+  grid-template-columns: 10px minmax(160px, 1fr) 96px 104px 104px 82px 82px 34px;
   align-items: center;
   gap: 8px;
   padding: 4px 8px;
@@ -2078,8 +2078,7 @@ select.form-input option {
 .routines-list .header-col-status,
 .routines-list .header-col-priority,
 .routines-list .header-col-start,
-.routines-list .header-col-end,
-.routines-list .header-col-routine {
+.routines-list .header-col-end {
   justify-self: start;
 }
 
@@ -2161,6 +2160,11 @@ select.form-input option {
   min-width: 0;
 }
 
+.recent-goal-item.routine-done {
+  border-color: rgba(16, 185, 129, 0.28);
+  background: rgba(16, 185, 129, 0.05);
+}
+
 .routine-check-btn {
   display: inline-flex;
   align-items: center;
@@ -2196,13 +2200,6 @@ select.form-input option {
   background: rgba(16, 185, 129, 0.1);
 }
 
-.routine-check-btn.compact {
-  justify-self: start;
-  min-width: 104px;
-  padding: 3px 7px;
-  font-size: 0.64rem;
-}
-
 .routine-progress-chip {
   display: flex;
   align-items: center;
@@ -2211,9 +2208,30 @@ select.form-input option {
   margin-top: 8px;
 }
 
-.routine-stat-text {
-  color: var(--text-tertiary);
-  font-size: 0.72rem;
+.routine-history-empty {
+  padding: 12px;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.routine-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.routine-history-month {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.routine-history-month strong {
+  color: var(--text-primary);
 }
 
 .calendar-sync-option {

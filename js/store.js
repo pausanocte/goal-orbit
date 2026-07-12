@@ -275,6 +275,13 @@ export function getRoutineCompletionDates(goal) {
     .sort();
 }
 
+export function getRoutineCompletionDaysInMonth(goal, yearMonth) {
+  return getRoutineCompletionDates(goal)
+    .filter(value => value.startsWith(`${yearMonth}-`))
+    .map(value => Number(value.slice(8, 10)))
+    .filter(Number.isFinite);
+}
+
 export function isRoutineCompletedOn(goal, dateKey = getTodayDateKey()) {
   return getRoutineCompletionDates(goal).includes(dateKey);
 }
@@ -289,29 +296,6 @@ export function toggleRoutineCompletion(goalId, dateKey = getTodayDateKey()) {
     : [...completions, dateKey].sort();
 
   return updateGoal(goalId, { routineCompletions: nextCompletions });
-}
-
-export function getRoutineStats(goal, referenceDate = new Date()) {
-  const completions = new Set(getRoutineCompletionDates(goal));
-  const todayKey = getLocalDateKey(referenceDate);
-  const monthPrefix = todayKey.slice(0, 7);
-  const monthCompleted = [...completions].filter(value => value.startsWith(monthPrefix)).length;
-  const dayOfMonth = referenceDate.getDate();
-
-  let streak = 0;
-  const cursor = new Date(referenceDate);
-  cursor.setHours(0, 0, 0, 0);
-  while (completions.has(getLocalDateKey(cursor))) {
-    streak += 1;
-    cursor.setDate(cursor.getDate() - 1);
-  }
-
-  return {
-    completedToday: completions.has(todayKey),
-    monthCompleted,
-    monthRate: dayOfMonth > 0 ? Math.round((monthCompleted / dayOfMonth) * 100) : 0,
-    streak
-  };
 }
 
 export function addGoal({ title, description, areaId, category, status = 'active', priority = 'medium', dueDate = null, startDate = null, completedDate = null, subtasks = [], frequency = null, frequencyCustom = null }) {

@@ -4,7 +4,7 @@
 
 import { el, STATUS_CONFIG, PRIORITY_CONFIG, FREQUENCY_CONFIG, CATEGORY_CONFIG, generateId, createDatePicker, registerEscapeClose } from '../utils.js';
 import { t, formatYearMonthI18n } from '../i18n.js';
-import { addGoal, updateGoal, getGoalById, getActiveAreas, canAddGoal, getReviewsByGoalId } from '../store.js';
+import { addGoal, updateGoal, getGoalById, getActiveAreas, canAddGoal, getReviewsByGoalId, getRoutineCompletionDates } from '../store.js';
 import { openAreaModal } from './area-modal.js';
 import { canCreateCalendarEvent, upsertGoalCalendarEvent } from '../services/calendar-api.js';
 
@@ -43,6 +43,44 @@ function createGoalReviewHistory(goal) {
       )
     );
   });
+
+  section.appendChild(list);
+  return section;
+}
+
+function createRoutineCompletionHistory(goal) {
+  const dates = getRoutineCompletionDates(goal);
+  const section = el('div', { className: 'form-field routine-completion-history' },
+    el('label', { className: 'form-label' }, t('routine.completionHistory'))
+  );
+
+  if (dates.length === 0) {
+    section.appendChild(
+      el('div', { className: 'glass-card routine-history-empty' }, t('routine.noCompletionHistory'))
+    );
+    return section;
+  }
+
+  const byMonth = new Map();
+  dates.forEach(dateKey => {
+    const yearMonth = dateKey.slice(0, 7);
+    const day = Number(dateKey.slice(8, 10));
+    if (!Number.isFinite(day)) return;
+    if (!byMonth.has(yearMonth)) byMonth.set(yearMonth, []);
+    byMonth.get(yearMonth).push(day);
+  });
+
+  const list = el('div', { className: 'routine-history-list' });
+  Array.from(byMonth.entries())
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .forEach(([yearMonth, days]) => {
+      list.appendChild(
+        el('div', { className: 'routine-history-month glass-card' },
+          el('strong', {}, formatYearMonthI18n(yearMonth)),
+          el('span', {}, t('routine.completedDays', days.sort((a, b) => a - b).join(', ')))
+        )
+      );
+    });
 
   section.appendChild(list);
   return section;
@@ -319,6 +357,9 @@ export function openGoalModal(goalId, defaultArea = null, onSave = null) {
 
   // 隠しフィールド: サブタスクデータ
   if (isEdit && goal) {
+    if (goal.category === 'routines') {
+      form.appendChild(createRoutineCompletionHistory(goal));
+    }
     form.appendChild(createGoalReviewHistory(goal));
   }
 

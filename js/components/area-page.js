@@ -4,7 +4,7 @@
 
 import { el, clearElement, STATUS_CONFIG, PRIORITY_CONFIG, FREQUENCY_CONFIG, formatDate, getDaysUntilDue, getSubtaskProgress, CATEGORY_CONFIG, normalizeDateInput } from '../utils.js';
 import { t } from '../i18n.js';
-import { getAreaById, getGoalsByAreaAndCategory, deleteGoal, archiveGoal, toggleSubtask, deleteArea, updateGoal, getRoutineStats, toggleRoutineCompletion } from '../store.js';
+import { getAreaById, getGoalsByAreaAndCategory, deleteGoal, archiveGoal, toggleSubtask, deleteArea, updateGoal, isRoutineCompletedOn, toggleRoutineCompletion } from '../store.js';
 import { openGoalModal } from './goal-modal.js';
 import { openAreaModal } from './area-modal.js';
 
@@ -461,7 +461,7 @@ function createGoalCard(goal, area, index, onRefresh) {
     const freqText = goal.frequency === 'custom' && goal.frequencyCustom
       ? goal.frequencyCustom
       : (goal.frequency ? t(freqConf.labelKey) : '');
-    const routineStats = getRoutineStats(goal);
+    const completedToday = isRoutineCompletedOn(goal);
 
     if (currentLayout === 'list') {
       const frequencySelect = el('select', {
@@ -505,18 +505,16 @@ function createGoalCard(goal, area, index, onRefresh) {
       el('div', { className: 'routine-progress-chip' },
         el('button', {
           type: 'button',
-          className: `routine-check-btn${routineStats.completedToday ? ' completed' : ''}`,
+          className: `routine-check-btn${completedToday ? ' completed' : ''}`,
           onClick: (event) => {
             event.stopPropagation();
             toggleRoutineCompletion(goal.id);
             onRefresh();
           }
         },
-          el('i', { 'data-lucide': routineStats.completedToday ? 'check-circle-2' : 'circle' }),
-          el('span', {}, routineStats.completedToday ? t('routine.doneToday') : t('routine.markDone'))
-        ),
-        el('span', { className: 'routine-stat-text' }, t('routine.monthRate', routineStats.monthRate)),
-        el('span', { className: 'routine-stat-text' }, t('routine.streak', routineStats.streak))
+          el('i', { 'data-lucide': completedToday ? 'check-circle-2' : 'circle' }),
+          el('span', {}, completedToday ? t('routine.doneToday') : t('routine.markDone'))
+        )
       )
     );
   }

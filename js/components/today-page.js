@@ -4,7 +4,7 @@
 
 import { el, clearElement, formatDate } from '../utils.js';
 import { t } from '../i18n.js';
-import { getActiveGoals, getAreaById, getDueSoonGoals, getRoutineStats, toggleRoutineCompletion } from '../store.js';
+import { getActiveGoals, getAreaById, getDueSoonGoals, isRoutineCompletedOn, toggleRoutineCompletion } from '../store.js';
 import { openGoalModal } from './goal-modal.js';
 
 const STALE_GOAL_DAYS = 14;
@@ -42,21 +42,19 @@ function createGoalListItem(goal, onRefresh, text) {
   const area = getAreaById(goal.areaId);
   const areaName = area ? area.name : t('common.unknown');
   const areaColor = area ? area.color : '#6366F1';
-  const routineStats = goal.category === 'routines' ? getRoutineStats(goal) : null;
 
   const meta = [areaName];
   if (goal.dueDate) meta.push(`${text.dueDate}: ${formatDate(goal.dueDate)}`);
   if (goal.frequency) meta.push(`${text.frequency}: ${goal.frequencyCustom || goal.frequency}`);
-  if (routineStats) meta.push(t('routine.monthRate', routineStats.monthRate));
-  if (routineStats?.streak > 0) meta.push(t('routine.streak', routineStats.streak));
   if (goal.updatedAt) {
     const days = Math.max(0, Math.floor((Date.now() - Date.parse(goal.updatedAt)) / (24 * 60 * 60 * 1000)));
     meta.push(text.updatedDaysAgo(days));
   }
 
+  const completedToday = goal.category === 'routines' && isRoutineCompletedOn(goal);
   const content = el('button', {
     type: 'button',
-    className: `recent-goal-item${routineStats?.completedToday ? ' routine-done' : ''}`,
+    className: `recent-goal-item${completedToday ? ' routine-done' : ''}`,
     style: 'width: 100%; text-align: left; background: transparent;',
     onClick: () => openGoalModal(goal.id, { areaId: goal.areaId, category: goal.category }, onRefresh)
   },
@@ -67,21 +65,21 @@ function createGoalListItem(goal, onRefresh, text) {
     )
   );
 
-  if (!routineStats) return content;
+  if (goal.category !== 'routines') return content;
 
   return el('div', { className: 'routine-check-row' },
     content,
     el('button', {
       type: 'button',
-      className: `routine-check-btn${routineStats.completedToday ? ' completed' : ''}`,
+      className: `routine-check-btn${completedToday ? ' completed' : ''}`,
       onClick: (event) => {
         event.stopPropagation();
         toggleRoutineCompletion(goal.id);
         onRefresh();
       }
     },
-      el('i', { 'data-lucide': routineStats.completedToday ? 'check-circle-2' : 'circle' }),
-      el('span', {}, routineStats.completedToday ? t('routine.doneToday') : t('routine.markDone'))
+      el('i', { 'data-lucide': completedToday ? 'check-circle-2' : 'circle' }),
+      el('span', {}, completedToday ? t('routine.doneToday') : t('routine.markDone'))
     )
   );
 }
