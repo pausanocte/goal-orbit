@@ -250,6 +250,10 @@ export function renderDashboard(container, onNavigate) {
       )
     )
   );
+  const areasTitleLabel = areasHeader.querySelector('.card-title span');
+  if (areasTitleLabel) areasTitleLabel.textContent = ` ${t('sidebar.areas')}`;
+  const addAreaLabel = areasHeader.querySelector('.header-controls button span');
+  if (addAreaLabel) addAreaLabel.textContent = t('sidebar.addArea');
   areasCol.appendChild(areasHeader);
 
   if (activeAreas.length === 0) {
@@ -258,6 +262,8 @@ export function renderDashboard(container, onNavigate) {
         el('p', {}, 'エリアはありません')
       )
     );
+    const emptyAreaMessage = areasCol.querySelector('.empty-state.small p');
+    if (emptyAreaMessage) emptyAreaMessage.textContent = t('common.noAreas');
   } else {
     const areasGrid = el('div', { className: 'stats-grid', style: 'margin-bottom: 0; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); width: 100%; gap: 12px;' });
     activeAreas.forEach(area => {
