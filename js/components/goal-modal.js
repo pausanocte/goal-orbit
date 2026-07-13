@@ -6,7 +6,7 @@ import { el, STATUS_CONFIG, PRIORITY_CONFIG, FREQUENCY_CONFIG, WEEKDAY_KEYS, CAT
 import { t, formatYearMonthI18n } from '../i18n.js';
 import { addGoal, updateGoal, getGoalById, getActiveAreas, canAddGoal, getReviewsByGoalId, getRoutineCompletionDates, toggleRoutineCompletion } from '../store.js';
 import { openAreaModal } from './area-modal.js';
-import { canCreateCalendarEvent, getCalendarValidationErrorKey, upsertGoalCalendarEvent } from '../services/calendar-api.js?v=20260714-6';
+import { canCreateCalendarEvent, deleteGoalCalendarEvent, getCalendarValidationErrorKey, upsertGoalCalendarEvent } from '../services/calendar-api.js?v=20260714-7';
 
 let modalOverlay = null;
 let removeEscapeClose = null;
@@ -690,7 +690,20 @@ async function handleSubmit(form, isEdit, goalId, onSave, pickers = {}) {
     }
   }
 
-  if (form.addToCalendar?.checked && savedGoal) {
+  if (!form.addToCalendar?.checked && savedGoal?.googleCalendarEventId) {
+    try {
+      await deleteGoalCalendarEvent(savedGoal);
+      updateGoal(savedGoal.id, {
+        googleCalendarEventId: null,
+        googleCalendarEventLink: null
+      });
+    } catch (err) {
+      console.error('Calendar delete failed', err);
+      const deleteFailedMessage = t('calendar.deleteFailed');
+      alert(`${deleteFailedMessage === 'calendar.deleteFailed' ? 'Googleカレンダーから削除できませんでした。Googleログインの権限を確認してください。' : deleteFailedMessage}\n\n${err.message || ''}`);
+      return;
+    }
+  } else if (form.addToCalendar?.checked && savedGoal) {
     if (!canCreateCalendarEvent(savedGoal)) {
       alert(t(getCalendarValidationErrorKey(savedGoal)));
       return;

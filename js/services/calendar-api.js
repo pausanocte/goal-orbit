@@ -1,4 +1,4 @@
-import { getGoogleAccessToken } from './drive-api.js?v=20260714-6';
+import { getGoogleAccessToken } from './drive-api.js?v=20260714-7';
 import { formatRoutineFrequency } from '../utils.js';
 
 const CALENDAR_API = 'https://www.googleapis.com/calendar/v3';
@@ -233,4 +233,18 @@ export async function upsertGoalCalendarEvent(goal) {
     method: 'POST',
     body: JSON.stringify(event)
   });
+}
+
+export async function deleteGoalCalendarEvent(goal) {
+  if (!goal?.googleCalendarEventId) return true;
+
+  try {
+    await calendarRequest(`/calendars/primary/events/${encodeURIComponent(goal.googleCalendarEventId)}`, {
+      method: 'DELETE'
+    });
+    return true;
+  } catch (err) {
+    if (err.status === 404 || err.status === 410) return true;
+    throw err;
+  }
 }

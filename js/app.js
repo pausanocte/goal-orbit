@@ -2,16 +2,16 @@
 // Orbit v3 - アプリ初期化・ルーティング
 // ==========================================
 
-import { renderSidebar } from './components/sidebar.js?v=20260714-6';
-import { renderDashboard } from './components/dashboard.js';
-import { renderTodayPage } from './components/today-page.js';
-import { renderAreaPage } from './components/area-page.js';
-import { renderMonthlyReview, flushMonthlyReviewAutosave } from './components/monthly-review.js';
-import { renderArchives } from './components/archives.js';
+import { renderSidebar } from './components/sidebar.js?v=20260714-7';
+import { renderDashboard } from './components/dashboard.js?v=20260714-7';
+import { renderTodayPage } from './components/today-page.js?v=20260714-7';
+import { renderAreaPage } from './components/area-page.js?v=20260714-7';
+import { renderMonthlyReview, flushMonthlyReviewAutosave } from './components/monthly-review.js?v=20260714-7';
+import { renderArchives } from './components/archives.js?v=20260714-7';
 import { openSyncConflictModal } from './components/sync-conflict-modal.js';
 import { migrateIfNeeded, getFullData, restoreFullData, getLastModified, initializeSampleDataIfNeeded, hasLocalUserChanges, markDataSynced, saveRecoveryBackup, setPremiumUnlocked } from './store.js';
-import { initDriveApi, isDriveAuthorized, downloadBackup, uploadBackup, findExistingBackupFile } from './services/drive-api.js?v=20260714-6';
-import { refreshPremiumEntitlement } from './services/premium-api.js?v=20260714-6';
+import { initDriveApi, isDriveAuthorized, downloadBackup, uploadBackup, findExistingBackupFile } from './services/drive-api.js?v=20260714-7';
+import { refreshPremiumEntitlement } from './services/premium-api.js?v=20260714-7';
 
 export const appState = { syncStatus: 'init' };
 let syncDebounceTimer = null;
