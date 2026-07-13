@@ -99,11 +99,6 @@ export const FREQUENCY_CONFIG = {
   custom: { labelKey: 'frequency.custom', color: '#FB923C' }
 };
 
-export const FREQUENCY_CUSTOM_PRESETS = [
-  { labelKey: 'frequency.preset.twiceWeek' },
-  { labelKey: 'frequency.preset.threeTimesWeek' }
-];
-
 export const WEEKDAY_KEYS = [
   { value: 'sun', labelKey: 'weekday.sun' },
   { value: 'mon', labelKey: 'weekday.mon' },

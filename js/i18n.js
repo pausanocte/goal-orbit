@@ -108,7 +108,6 @@ const translations = {
     'modal.frequency': '頻度',
     'modal.frequencyCustomPlaceholder': '例: 週3回、月2回など',
     'modal.frequencyCustomHelp': '選択肢にない頻度は自由に入力できます。',
-    'modal.frequencyPresets': 'よく使う頻度',
     'modal.frequencyWeekdays': '実施する曜日',
     'modal.frequencyWeekdaysHelp': '指定しない場合は曜日を限定しません。',
     'modal.routineTime': 'カレンダー時間',
@@ -138,8 +137,6 @@ const translations = {
     'frequency.biweekly': '隔週',
     'frequency.monthly': '毎月',
     'frequency.custom': 'カスタム',
-    'frequency.preset.twiceWeek': '週2回',
-    'frequency.preset.threeTimesWeek': '週3回',
 
     // Monthly Review
     'review.title': '月次振り返り',
@@ -349,7 +346,6 @@ const translations = {
     'modal.frequency': 'Frequency',
     'modal.frequencyCustomPlaceholder': 'e.g. 3 times a week, twice a month',
     'modal.frequencyCustomHelp': 'Use custom text when the presets do not fit.',
-    'modal.frequencyPresets': 'Common frequencies',
     'modal.frequencyWeekdays': 'Days of week',
     'modal.frequencyWeekdaysHelp': 'Leave blank if this routine is not limited to specific weekdays.',
     'modal.routineTime': 'Calendar time',
@@ -376,8 +372,6 @@ const translations = {
     'frequency.biweekly': 'Every 2 weeks',
     'frequency.monthly': 'Monthly',
     'frequency.custom': 'Custom',
-    'frequency.preset.twiceWeek': 'Twice a week',
-    'frequency.preset.threeTimesWeek': '3 times a week',
 
     'review.title': 'Monthly Review',
     'review.subtitle': 'Record your reflections to visualize growth',

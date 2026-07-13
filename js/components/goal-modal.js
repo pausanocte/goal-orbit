@@ -2,7 +2,7 @@
 // Orbit v3 - 目標モーダルコンポーネント
 // ==========================================
 
-import { el, STATUS_CONFIG, PRIORITY_CONFIG, FREQUENCY_CONFIG, FREQUENCY_CUSTOM_PRESETS, WEEKDAY_KEYS, CATEGORY_CONFIG, generateId, createDatePicker, registerEscapeClose } from '../utils.js';
+import { el, STATUS_CONFIG, PRIORITY_CONFIG, FREQUENCY_CONFIG, WEEKDAY_KEYS, CATEGORY_CONFIG, generateId, createDatePicker, registerEscapeClose } from '../utils.js';
 import { t, formatYearMonthI18n } from '../i18n.js';
 import { addGoal, updateGoal, getGoalById, getActiveAreas, canAddGoal, getReviewsByGoalId, getRoutineCompletionDates, toggleRoutineCompletion } from '../store.js';
 import { openAreaModal } from './area-modal.js';
@@ -447,20 +447,6 @@ export function openGoalModal(goalId, defaultArea = null, onSave = null) {
       const freqSelect = el('select', { name: 'frequency', className: 'form-input', onChange: () => {
         const customField = dynamicContainer.querySelector('.freq-custom-field');
         const weekdaysField = dynamicContainer.querySelector('.frequency-weekdays-field');
-        if (freqSelect.value.startsWith('preset:')) {
-          const presetText = t(freqSelect.value.slice(7));
-          freqSelect.value = 'custom';
-          if (customField) {
-            customField.style.display = 'block';
-            const fieldInput = customField.querySelector('input[name="frequencyCustom"]');
-            if (fieldInput) {
-              fieldInput.value = presetText;
-              fieldInput.focus();
-            }
-          }
-          if (weekdaysField) weekdaysField.style.display = 'block';
-          return;
-        }
         if (customField) customField.style.display = freqSelect.value === 'custom' ? 'block' : 'none';
         if (weekdaysField) weekdaysField.style.display = freqSelect.value === 'monthly' ? 'none' : 'block';
       }});
@@ -470,11 +456,6 @@ export function openGoalModal(goalId, defaultArea = null, onSave = null) {
         if (goal?.frequency === key) opt.selected = true;
         freqSelect.appendChild(opt);
       }
-      const presetGroup = el('optgroup', { label: t('modal.frequencyPresets') });
-      FREQUENCY_CUSTOM_PRESETS.forEach(preset => {
-        presetGroup.appendChild(el('option', { value: `preset:${preset.labelKey}` }, t(preset.labelKey)));
-      });
-      freqSelect.appendChild(presetGroup);
       dynamicContainer.appendChild(createField(t('modal.frequency'), freqSelect));
 
       // カスタム頻度入力
@@ -494,21 +475,6 @@ export function openGoalModal(goalId, defaultArea = null, onSave = null) {
       });
       customField.appendChild(customInput);
       customField.appendChild(el('small', { className: 'frequency-custom-help' }, t('modal.frequencyCustomHelp')));
-      customField.appendChild(
-        el('div', { className: 'frequency-preset-group', 'aria-label': t('modal.frequencyPresets') },
-          el('span', { className: 'frequency-preset-label' }, t('modal.frequencyPresets')),
-          ...FREQUENCY_CUSTOM_PRESETS.map(preset => el('button', {
-            type: 'button',
-            className: 'frequency-preset-chip',
-            onClick: () => {
-              freqSelect.value = 'custom';
-              customField.style.display = 'block';
-              customInput.value = t(preset.labelKey);
-              customInput.focus();
-            }
-          }, t(preset.labelKey)))
-        )
-      );
       dynamicContainer.appendChild(customField);
 
       const selectedWeekdays = Array.isArray(goal?.frequencyWeekdays) ? goal.frequencyWeekdays : [];

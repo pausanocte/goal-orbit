@@ -2438,39 +2438,6 @@ select.form-input option {
   font-size: 0.74rem;
 }
 
-.frequency-preset-group {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  margin-top: 10px;
-}
-
-.frequency-preset-label {
-  width: 100%;
-  color: var(--text-secondary);
-  font-size: 0.74rem;
-  font-weight: 600;
-}
-
-.frequency-preset-chip {
-  border: 1px solid rgba(245, 158, 11, 0.24);
-  border-radius: 999px;
-  background: rgba(245, 158, 11, 0.08);
-  color: var(--text-secondary);
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 0.76rem;
-  padding: 5px 9px;
-  transition: all var(--transition-fast);
-}
-
-.frequency-preset-chip:hover {
-  border-color: rgba(245, 158, 11, 0.45);
-  color: var(--text-primary);
-  background: rgba(245, 158, 11, 0.14);
-}
-
 .frequency-weekday-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
