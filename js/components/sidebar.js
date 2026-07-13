@@ -6,9 +6,9 @@ import { el } from '../utils.js';
 import { t, toggleLang, getLang } from '../i18n.js';
 import { exportData, importData, getActiveAreas, getAllGoals, getFreeItemLimit, isPremiumUnlocked } from '../store.js';
 import { openAreaModal } from './area-modal.js';
-import { appState, retryDriveSync } from '../app.js?v=20260714-5';
-import { handleAuthClick, handleSignoutClick, isDriveAuthorized, getUserInfo } from '../services/drive-api.js?v=20260714-5';
-import { isPremiumPurchaseConfigured, startPremiumPurchase } from '../services/premium-api.js?v=20260714-5';
+import { appState, retryDriveSync } from '../app.js?v=20260714-6';
+import { handleAuthClick, handleSignoutClick, isDriveAuthorized, getUserInfo } from '../services/drive-api.js?v=20260714-6';
+import { isPremiumPurchaseConfigured, startPremiumPurchase } from '../services/premium-api.js?v=20260714-6';
 
 export function renderSidebar(container, currentPage, onNavigate) {
   container.innerHTML = '';

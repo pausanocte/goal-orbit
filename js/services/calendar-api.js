@@ -1,4 +1,4 @@
-import { getGoogleAccessToken } from './drive-api.js?v=20260714-5';
+import { getGoogleAccessToken } from './drive-api.js?v=20260714-6';
 import { formatRoutineFrequency } from '../utils.js';
 
 const CALENDAR_API = 'https://www.googleapis.com/calendar/v3';
@@ -27,8 +27,16 @@ function toDateValue(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
-function toLocalDateTimeValue(date) {
-  return `${toDateValue(date)}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:00`;
+function toUtcDateTimeValue(date) {
+  return date.toISOString();
+}
+
+function createLocalDateTime(dateValue, timeValue) {
+  const [year, month, day] = String(dateValue || '').split('-').map(Number);
+  const [hour, minute] = String(timeValue || '').split(':').map(Number);
+  const date = new Date(year, month - 1, day, hour, minute, 0);
+  if (Number.isNaN(date.getTime())) throw new Error('CALENDAR_TIME_REQUIRED');
+  return date;
 }
 
 function getGoalCalendarDate(goal) {
@@ -93,15 +101,15 @@ function hasRoutineTime(goal) {
 }
 
 function buildRoutineTimedRange(goal, date) {
-  const start = new Date(`${date}T${goal.routineStartTime}:00`);
+  const start = createLocalDateTime(date, goal.routineStartTime);
   const duration = Number(goal.routineDurationMinutes || 30);
   const minutes = Number.isFinite(duration) && duration > 0 ? duration : 30;
   const end = new Date(start.getTime() + minutes * 60 * 1000);
   const timeZone = getLocalTimeZone();
 
   return {
-    start: { dateTime: toLocalDateTimeValue(start), timeZone },
-    end: { dateTime: toLocalDateTimeValue(end), timeZone }
+    start: { dateTime: toUtcDateTimeValue(start), timeZone },
+    end: { dateTime: toUtcDateTimeValue(end), timeZone }
   };
 }
 
