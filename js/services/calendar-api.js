@@ -28,7 +28,13 @@ function toDateValue(date) {
 }
 
 function toDateTimeValue(date) {
-  return `${toDateValue(date)}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:00`;
+  const offsetMinutes = -date.getTimezoneOffset();
+  const sign = offsetMinutes >= 0 ? '+' : '-';
+  const absoluteOffset = Math.abs(offsetMinutes);
+  const offsetHours = String(Math.floor(absoluteOffset / 60)).padStart(2, '0');
+  const offsetMins = String(absoluteOffset % 60).padStart(2, '0');
+
+  return `${toDateValue(date)}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:00${sign}${offsetHours}:${offsetMins}`;
 }
 
 function getGoalCalendarDate(goal) {
