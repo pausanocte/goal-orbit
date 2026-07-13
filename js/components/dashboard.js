@@ -2,7 +2,7 @@
 // Orbit v3.3 - ダッシュボードコンポーネント
 // ==========================================
 
-import { el, clearElement, STATUS_CONFIG, PRIORITY_CONFIG, formatDate, formatRoutineFrequency, getSubtaskProgress, normalizeDateInput } from '../utils.js';
+import { el, clearElement, STATUS_CONFIG, PRIORITY_CONFIG, formatDate, formatRoutineFrequency, getSubtaskProgress, normalizeDateInput, keyboardActivationAttrs } from '../utils.js';
 import { t } from '../i18n.js';
 import { getStats, getDueSoonGoals, getActiveAreas, getAreaById, getActiveGoals, getAllGoals, updateGoal, toggleSubtask, getDashboardLayout, saveDashboardLayout, deleteGoal, isRoutineCompletedOn, toggleRoutineCompletion } from '../store.js';
 import { openGoalModal } from './goal-modal.js';
@@ -36,6 +36,7 @@ function createDeleteGoalButton(goal, onDeleted) {
   return el('button', {
     className: 'btn btn-ghost btn-sm dashboard-delete-goal-btn',
     title: t('common.delete'),
+    'aria-label': t('common.delete'),
     onClick: (e) => {
       e.stopPropagation();
       if (confirm(t('area.confirmDelete', goal.title))) {
@@ -301,10 +302,12 @@ export function renderDashboard(container, onNavigate) {
     const areasGrid = el('div', { className: 'stats-grid', style: 'margin-bottom: 0; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); width: 100%; gap: 12px;' });
     activeAreas.forEach(area => {
       const areaStats = stats.byArea[area.id] || { total: 0, routines: 0, projects: 0, resources: 0 };
+      const openArea = () => onNavigate(`area-${area.id}`);
       const card = el('div', {
         className: 'stat-card area-card',
         style: 'cursor: pointer; margin-bottom: 0; padding: 16px;',
-        onClick: () => onNavigate(`area-${area.id}`)
+        onClick: openArea,
+        ...keyboardActivationAttrs(openArea, { label: area.name })
       },
         el('div', { className: 'stat-card-header', style: 'margin-bottom: 8px;' },
           el('div', {
@@ -479,9 +482,11 @@ export function renderDashboard(container, onNavigate) {
         el('option', { value: 'custom', selected: goal.frequency === 'custom' }, freqText || t('frequency.custom'))
       );
 
+      const openGoal = () => openGoalModal(goal.id, { areaId: goal.areaId, category: goal.category }, () => renderDashboard(container, onNavigate));
       const item = el('div', {
         className: 'dashboard-compact-item',
-        onClick: () => openGoalModal(goal.id, { areaId: goal.areaId, category: goal.category }, () => renderDashboard(container, onNavigate))
+        onClick: openGoal,
+        ...keyboardActivationAttrs(openGoal, { label: goal.title })
       },
         el('div', { className: 'recent-goal-area-dot', style: `background: ${areaColor}` }),
         el('div', { className: 'compact-item-info' },
@@ -495,6 +500,7 @@ export function renderDashboard(container, onNavigate) {
           type: 'button',
           className: `routine-check-btn compact${completedToday ? ' completed' : ''}`,
           title: completedToday ? t('routine.doneToday') : t('routine.markDone'),
+          'aria-label': completedToday ? t('routine.doneToday') : t('routine.markDone'),
           onClick: (event) => {
             event.stopPropagation();
             toggleRoutineCompletion(goal.id);
@@ -649,9 +655,11 @@ export function renderDashboard(container, onNavigate) {
         el('option', { value: 'low', selected: goal.priority === 'low' }, t('priority.low'))
       );
 
+      const openGoal = () => openGoalModal(goal.id, { areaId: goal.areaId, category: goal.category }, () => renderDashboard(container, onNavigate));
       const item = el('div', {
         className: 'dashboard-compact-item',
-        onClick: () => openGoalModal(goal.id, { areaId: goal.areaId, category: goal.category }, () => renderDashboard(container, onNavigate))
+        onClick: openGoal,
+        ...keyboardActivationAttrs(openGoal, { label: goal.title })
       },
         el('div', { className: 'recent-goal-area-dot', style: `background: ${areaColor}` }),
         el('div', { className: 'compact-item-info' },
@@ -707,9 +715,11 @@ export function renderDashboard(container, onNavigate) {
         dueClass += ' due-soon';
       }
 
+      const openArea = () => onNavigate(area ? `area-${area.id}` : 'dashboard');
       const item = el('div', {
         className: 'due-soon-item',
-        onClick: () => onNavigate(area ? `area-${area.id}` : 'dashboard')
+        onClick: openArea,
+        ...keyboardActivationAttrs(openArea, { label: goal.title })
       },
         el('div', { className: 'recent-goal-area-dot', style: `background: ${areaColor}` }),
         el('div', { className: 'recent-goal-info' },
@@ -739,10 +749,12 @@ export function renderDashboard(container, onNavigate) {
       const areaColor = area ? area.color : '#6366F1';
       const daysSinceUpdate = Math.max(0, Math.floor((Date.now() - Date.parse(goal.updatedAt || goal.createdAt || Date.now())) / (24 * 60 * 60 * 1000)));
 
+      const openGoal = () => openGoalModal(goal.id, { areaId: goal.areaId, category: goal.category }, () => renderDashboard(container, onNavigate));
       staleList.appendChild(
         el('div', {
           className: 'recent-goal-item',
-          onClick: () => openGoalModal(goal.id, { areaId: goal.areaId, category: goal.category }, () => renderDashboard(container, onNavigate))
+          onClick: openGoal,
+          ...keyboardActivationAttrs(openGoal, { label: goal.title })
         },
           el('div', { className: 'recent-goal-area-dot', style: `background: ${areaColor}` }),
           el('div', { className: 'recent-goal-info' },
@@ -788,9 +800,11 @@ export function renderDashboard(container, onNavigate) {
       const areaName = area ? area.name : t('common.unknown');
       const areaColor = area ? area.color : '#6366F1';
 
+      const openArea = () => onNavigate(area ? `area-${area.id}` : 'dashboard');
       const item = el('div', {
         className: 'recent-goal-item',
-        onClick: () => onNavigate(area ? `area-${area.id}` : 'dashboard')
+        onClick: openArea,
+        ...keyboardActivationAttrs(openArea, { label: goal.title })
       },
         el('div', { className: 'recent-goal-area-dot', style: `background: ${areaColor}` }),
         el('div', { className: 'recent-goal-info' },
@@ -867,14 +881,16 @@ function createDashboardSubtaskList(goal, onRefresh) {
   });
 
   goal.subtasks.forEach(st => {
+    const toggleItem = (e) => {
+      e.stopPropagation();
+      toggleSubtask(goal.id, st.id);
+      onRefresh();
+    };
     const stItem = el('div', {
       className: `subtask-item${st.completed ? ' completed' : ''}`,
       style: 'display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 2px 0;',
-      onClick: (e) => {
-        e.stopPropagation();
-        toggleSubtask(goal.id, st.id);
-        onRefresh();
-      }
+      onClick: toggleItem,
+      ...keyboardActivationAttrs(toggleItem, { role: 'checkbox', label: st.text, checked: st.completed })
     },
       el('div', { className: `subtask-check${st.completed ? ' checked' : ''}` },
         st.completed ? el('i', { 'data-lucide': 'check' }) : null

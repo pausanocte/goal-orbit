@@ -2,7 +2,7 @@
 // Orbit v3 - アーカイブコンポーネント
 // ==========================================
 
-import { el, clearElement, PRIORITY_CONFIG, FREQUENCY_CONFIG, formatDate, formatRoutineFrequency, getSubtaskProgress } from '../utils.js';
+import { el, clearElement, PRIORITY_CONFIG, FREQUENCY_CONFIG, formatDate, formatRoutineFrequency, getSubtaskProgress, keyboardActivationAttrs } from '../utils.js';
 import { t } from '../i18n.js';
 import { getArchivedGoals, unarchiveGoal, deleteGoal, getAllAreas, getAreaById, updateArea, deleteArea } from '../store.js';
 import { openGoalModal } from './goal-modal.js';
@@ -183,10 +183,12 @@ function createArchiveCard(goal, index, onRefresh) {
   
   const priorityConf = PRIORITY_CONFIG[goal.priority] || { labelKey: 'priority.medium', color: '#FBBF24' };
 
+  const openGoal = () => openGoalModal(goal.id, { areaId: goal.areaId, category: goal.category }, onRefresh);
   const card = el('div', {
     className: 'goal-card archived-card',
     style: `animation-delay: ${index * 0.05}s; border-top: 3px solid ${areaColor}; cursor: pointer;`,
-    onClick: () => openGoalModal(goal.id, { areaId: goal.areaId, category: goal.category }, onRefresh)
+    onClick: openGoal,
+    ...keyboardActivationAttrs(openGoal, { label: goal.title })
   });
 
   // ヘッダー
@@ -199,6 +201,7 @@ function createArchiveCard(goal, index, onRefresh) {
       el('button', {
         className: 'icon-btn',
         title: t('archives.restore'),
+        'aria-label': t('archives.restore'),
         onClick: (e) => {
           e.stopPropagation();
           unarchiveGoal(goal.id);
@@ -210,6 +213,7 @@ function createArchiveCard(goal, index, onRefresh) {
       el('button', {
         className: 'icon-btn',
         title: t('archives.permanentDelete'),
+        'aria-label': t('archives.permanentDelete'),
         onClick: (e) => {
           e.stopPropagation();
           if (confirm(t('archives.confirmDelete', goal.title))) {

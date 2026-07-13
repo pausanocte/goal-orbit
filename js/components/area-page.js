@@ -2,7 +2,7 @@
 // Orbit v3.1 - Area別ページコンポーネント
 // ==========================================
 
-import { el, clearElement, STATUS_CONFIG, PRIORITY_CONFIG, FREQUENCY_CONFIG, formatDate, formatRoutineFrequency, getDaysUntilDue, getSubtaskProgress, CATEGORY_CONFIG, normalizeDateInput } from '../utils.js';
+import { el, clearElement, STATUS_CONFIG, PRIORITY_CONFIG, FREQUENCY_CONFIG, formatDate, formatRoutineFrequency, getDaysUntilDue, getSubtaskProgress, CATEGORY_CONFIG, normalizeDateInput, keyboardActivationAttrs } from '../utils.js';
 import { t } from '../i18n.js';
 import { getAreaById, getGoalsByAreaAndCategory, deleteGoal, archiveGoal, toggleSubtask, deleteArea, updateGoal, isRoutineCompletedOn, toggleRoutineCompletion } from '../store.js';
 import { openGoalModal } from './goal-modal.js';
@@ -306,10 +306,12 @@ function createGoalCard(goal, area, index, onRefresh) {
   const priorityConf = PRIORITY_CONFIG[goal.priority] || { labelKey: 'priority.medium', color: '#FBBF24' };
 
   const currentLayout = localStorage.getItem('orbit_view_layout') || 'grid';
+  const openGoal = () => openGoalModal(goal.id, { areaId: area.id, category: goal.category }, onRefresh);
   const card = el('div', {
     className: `goal-card layout-${currentLayout}`,
     style: `animation-delay: ${index * 0.05}s; cursor: pointer;`,
-    onClick: () => openGoalModal(goal.id, { areaId: area.id, category: goal.category }, onRefresh)
+    onClick: openGoal,
+    ...keyboardActivationAttrs(openGoal, { label: goal.title })
   });
   card.style.setProperty('--area-color', area.color || '#6366F1');
 
@@ -438,13 +440,15 @@ function createGoalCard(goal, area, index, onRefresh) {
     // サブタスクリスト
     const stList = el('div', { className: 'subtask-list' });
     goal.subtasks.forEach(st => {
+      const toggleItem = (e) => {
+        e.stopPropagation();
+        toggleSubtask(goal.id, st.id);
+        onRefresh();
+      };
       const stItem = el('div', {
         className: `subtask-item${st.completed ? ' completed' : ''}`,
-        onClick: (e) => {
-          e.stopPropagation();
-          toggleSubtask(goal.id, st.id);
-          onRefresh();
-        }
+        onClick: toggleItem,
+        ...keyboardActivationAttrs(toggleItem, { role: 'checkbox', label: st.text, checked: st.completed })
       },
         el('div', { className: `subtask-check${st.completed ? ' checked' : ''}` },
           st.completed ? el('i', { 'data-lucide': 'check' }) : null
@@ -511,6 +515,7 @@ function createGoalCard(goal, area, index, onRefresh) {
         el('button', {
           type: 'button',
           className: `routine-check-btn${completedToday ? ' completed' : ''}`,
+          'aria-label': completedToday ? t('routine.doneToday') : t('routine.markDone'),
           onClick: (event) => {
             event.stopPropagation();
             toggleRoutineCompletion(goal.id);
@@ -567,6 +572,7 @@ function createActionBtn(icon, title, onClick) {
   return el('button', {
     className: 'icon-btn',
     title,
+    'aria-label': title,
     onClick: (e) => {
       e.stopPropagation();
       onClick(e);

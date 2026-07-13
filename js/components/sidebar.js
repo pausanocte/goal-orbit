@@ -2,7 +2,7 @@
 // Orbit v3 - サイドバーコンポーネント
 // ==========================================
 
-import { el } from '../utils.js';
+import { el, keyboardActivationAttrs } from '../utils.js';
 import { t, toggleLang, getLang } from '../i18n.js';
 import { exportData, importData, getActiveAreas, getAllGoals, getFreeItemLimit, isPremiumUnlocked } from '../store.js';
 import { openAreaModal } from './area-modal.js';
@@ -25,6 +25,7 @@ export function renderSidebar(container, currentPage, onNavigate) {
   // 閉じるボタン
   const closeBtn = el('button', {
     className: 'sidebar-close-btn',
+    'aria-label': lang === 'ja' ? 'サイドバーを閉じる' : 'Close sidebar',
     title: 'サイドバーを閉じる',
     onClick: (e) => {
       e.stopPropagation();
@@ -176,14 +177,16 @@ export function renderSidebar(container, currentPage, onNavigate) {
   const areas = getActiveAreas();
   areas.forEach(area => {
     const isAreaActive = currentPage === `area-${area.id}`;
+    const navigateArea = (e) => {
+      e.preventDefault();
+      onNavigate(`area-${area.id}`);
+    };
     const areaItem = el('a', {
       className: `sidebar-nav-item area-nav-item${isAreaActive ? ' active' : ''}`,
       href: '#',
       dataset: { page: `area-${area.id}` },
-      onClick: (e) => {
-        e.preventDefault();
-        onNavigate(`area-${area.id}`);
-      }
+      onClick: navigateArea,
+      ...keyboardActivationAttrs(navigateArea, { role: 'link', label: area.name })
     },
       el('i', { 'data-lucide': area.icon || 'star' }),
       el('span', {}, area.name)
@@ -322,6 +325,7 @@ export function renderSidebar(container, currentPage, onNavigate) {
   const currentTheme = localStorage.getItem('orbit_theme') || 'dark';
   const themeToggleBtn = el('button', {
     className: 'theme-toggle-btn',
+    'aria-label': currentTheme === 'light' ? (lang === 'ja' ? 'ダークモードに切り替え' : 'Switch to dark mode') : (lang === 'ja' ? 'ライトモードに切り替え' : 'Switch to light mode'),
     style: 'background: transparent; border: 1px solid var(--border-subtle); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); cursor: pointer; transition: all var(--transition-fast); margin-right: 8px;',
     title: currentTheme === 'light' ? 'ダークモードへ' : 'ライトモードへ',
     onClick: () => {
@@ -360,15 +364,17 @@ export function renderSidebar(container, currentPage, onNavigate) {
 
 function createNavItem(item, currentPage, onNavigate) {
   const isActive = currentPage === item.id;
+  const navigateItem = (e) => {
+    e.preventDefault();
+    onNavigate(item.id);
+  };
 
   const navItem = el('a', {
     className: `sidebar-nav-item${isActive ? ' active' : ''}`,
     href: '#',
     dataset: { page: item.id },
-    onClick: (e) => {
-      e.preventDefault();
-      onNavigate(item.id);
-    }
+    onClick: navigateItem,
+    ...keyboardActivationAttrs(navigateItem, { role: 'link', label: item.label })
   },
     el('i', { 'data-lucide': item.icon }),
     el('span', {}, item.label)

@@ -69,6 +69,47 @@ export function el(tag, attrs = {}, ...children) {
   return element;
 }
 
+const KEYBOARD_ACTIVATION_KEYS = new Set(['Enter', ' ']);
+const INTERACTIVE_TARGET_SELECTOR = [
+  'a',
+  'button',
+  'input',
+  'select',
+  'textarea',
+  'label',
+  'summary',
+  '[contenteditable="true"]',
+  '[role="button"]',
+  '[role="link"]',
+  '[role="checkbox"]',
+  '[role="switch"]'
+].join(',');
+
+export function keyboardActivationAttrs(onActivate, options = {}) {
+  const attrs = {
+    role: options.role || 'button',
+    tabindex: options.tabindex ?? '0',
+    onKeydown: (event) => {
+      if (!KEYBOARD_ACTIVATION_KEYS.has(event.key)) return;
+      if (
+        event.target !== event.currentTarget &&
+        event.target instanceof Element &&
+        event.target.closest(INTERACTIVE_TARGET_SELECTOR)
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      onActivate?.(event);
+    }
+  };
+
+  if (options.label) attrs['aria-label'] = options.label;
+  if (options.pressed !== undefined) attrs['aria-pressed'] = String(Boolean(options.pressed));
+  if (options.checked !== undefined) attrs['aria-checked'] = String(Boolean(options.checked));
+  return attrs;
+}
+
 export function clearElement(element) {
   while (element.firstChild) element.removeChild(element.firstChild);
 }
