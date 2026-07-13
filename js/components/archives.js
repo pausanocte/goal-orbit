@@ -5,7 +5,7 @@
 import { el, clearElement, PRIORITY_CONFIG, FREQUENCY_CONFIG, formatDate, formatRoutineFrequency, getSubtaskProgress } from '../utils.js';
 import { t } from '../i18n.js';
 import { getArchivedGoals, unarchiveGoal, deleteGoal, getAllAreas, getAreaById, updateArea, deleteArea } from '../store.js';
-import { openGoalModal } from './goal-modal.js?v=20260714-7';
+import { openGoalModal } from './goal-modal.js?v=20260714-8';
 
 export function renderArchives(container, onRefresh) {
   clearElement(container);

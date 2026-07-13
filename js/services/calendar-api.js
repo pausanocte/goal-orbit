@@ -1,4 +1,4 @@
-import { getGoogleAccessToken } from './drive-api.js?v=20260714-7';
+import { getGoogleAccessToken } from './drive-api.js?v=20260714-8';
 import { formatRoutineFrequency } from '../utils.js';
 
 const CALENDAR_API = 'https://www.googleapis.com/calendar/v3';
@@ -222,10 +222,9 @@ export function getCalendarValidationErrorKey(goal) {
 export async function upsertGoalCalendarEvent(goal) {
   const event = buildGoalEvent(goal);
   if (goal.googleCalendarEventId) {
-    const patchEvent = event.recurrence ? event : { ...event, recurrence: [] };
     return calendarRequest(`/calendars/primary/events/${encodeURIComponent(goal.googleCalendarEventId)}`, {
-      method: 'PATCH',
-      body: JSON.stringify(patchEvent)
+      method: 'PUT',
+      body: JSON.stringify(event)
     });
   }
 
