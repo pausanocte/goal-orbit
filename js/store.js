@@ -67,11 +67,16 @@ export function purgeExpiredTrash() {
   const now = Date.now();
   const areas = loadData(AREAS_KEY);
   const goals = loadData(GOALS_KEY);
+  const purgedGoalIds = goals
+    .filter(goal => isExpiredTrashItem(goal, now))
+    .map(goal => goal.id)
+    .filter(Boolean);
   const nextAreas = areas.filter(area => !isExpiredTrashItem(area, now));
   const nextGoals = goals.filter(goal => !isExpiredTrashItem(goal, now));
 
   if (nextAreas.length !== areas.length) saveData(AREAS_KEY, nextAreas);
   if (nextGoals.length !== goals.length) saveData(GOALS_KEY, nextGoals);
+  if (purgedGoalIds.length > 0) removeGoalReferencesFromReviews(purgedGoalIds);
 }
 
 export function saveRecoveryBackup(data) {
@@ -560,6 +565,30 @@ export function saveReview({ yearMonth, categoryReviews, overallReview, goals })
   saveData(REVIEWS_KEY, reviews);
 }
 
+function removeGoalReferencesFromReviews(goalIds) {
+  const idSet = new Set(goalIds);
+  if (idSet.size === 0) return;
+
+  let changed = false;
+  const reviews = getAllReviews().map(review => {
+    if (!review.goals || typeof review.goals !== 'object') return review;
+
+    const nextGoals = { ...review.goals };
+    let reviewChanged = false;
+    for (const goalId of idSet) {
+      if (Object.prototype.hasOwnProperty.call(nextGoals, goalId)) {
+        delete nextGoals[goalId];
+        reviewChanged = true;
+        changed = true;
+      }
+    }
+
+    return reviewChanged ? { ...review, goals: nextGoals, updatedAt: new Date().toISOString() } : review;
+  });
+
+  if (changed) saveData(REVIEWS_KEY, reviews);
+}
+
 // ===== Dashboard Layout =====
 
 export function getDashboardLayout() {
@@ -680,6 +709,17 @@ function validateRecordArray(name, value, maxItems, requiredFields = []) {
   return errors;
 }
 
+function findDuplicateIds(items) {
+  const seen = new Set();
+  const duplicates = new Set();
+  items.forEach(item => {
+    if (!item?.id) return;
+    if (seen.has(item.id)) duplicates.add(item.id);
+    seen.add(item.id);
+  });
+  return [...duplicates];
+}
+
 function validateImportData(data) {
   if (!isPlainObject(data)) {
     return { valid: false, errors: ['Backup must be a JSON object.'] };
@@ -693,38 +733,71 @@ function validateImportData(data) {
     errors.push(`Unsupported backup version: ${version || 'missing'}.`);
   }
 
-  const areas = data.areas ?? [];
-  const goals = data.goals ?? [];
-  const reviews = data.reviews ?? [];
+  const areas = data.areas;
+  const goals = data.goals;
+  const reviews = data.reviews;
 
   errors.push(...validateRecordArray('areas', areas, MAX_IMPORT_AREAS, ['id', 'name']));
   errors.push(...validateRecordArray('goals', goals, MAX_IMPORT_GOALS, ['id', 'title', 'areaId', 'category']));
   errors.push(...validateRecordArray('reviews', reviews, MAX_IMPORT_REVIEWS, ['id']));
 
-  goals.forEach((goal, index) => {
-    if (!['routines', 'projects', 'resources'].includes(goal.category)) {
-      errors.push(`goals[${index}].category is invalid.`);
-    }
-  });
+  if (Array.isArray(areas) && Array.isArray(goals) && Array.isArray(reviews)) {
+    findDuplicateIds(areas).forEach(id => errors.push(`Duplicate area id: ${id}.`));
+    findDuplicateIds(goals).forEach(id => errors.push(`Duplicate goal id: ${id}.`));
+    findDuplicateIds(reviews).forEach(id => errors.push(`Duplicate review id: ${id}.`));
+
+    const areaIds = new Set(areas.map(area => area.id));
+    goals.forEach((goal, index) => {
+      if (!['routines', 'projects', 'resources'].includes(goal.category)) {
+        errors.push(`goals[${index}].category is invalid.`);
+      }
+      if (!areaIds.has(goal.areaId)) {
+        errors.push(`goals[${index}].areaId does not exist.`);
+      }
+      if (goal.subtasks !== undefined && !Array.isArray(goal.subtasks)) {
+        errors.push(`goals[${index}].subtasks must be an array.`);
+      }
+      if (goal.routineCompletions !== undefined && !Array.isArray(goal.routineCompletions)) {
+        errors.push(`goals[${index}].routineCompletions must be an array.`);
+      }
+    });
+
+    const goalIds = new Set(goals.map(goal => goal.id));
+    reviews.forEach((review, index) => {
+      if (review.goals !== undefined && !isPlainObject(review.goals)) {
+        errors.push(`reviews[${index}].goals must be an object.`);
+        return;
+      }
+      Object.keys(review.goals || {}).forEach(goalId => {
+        if (!goalIds.has(goalId)) {
+          errors.push(`reviews[${index}] references an unknown goal id.`);
+        }
+      });
+    });
+  }
 
   if (data.dashboardLayout !== undefined && !Array.isArray(data.dashboardLayout)) {
     errors.push('dashboardLayout must be an array.');
   }
+
+  const safeAreas = Array.isArray(areas) ? areas : [];
+  const safeGoals = Array.isArray(goals) ? goals : [];
+  const safeReviews = Array.isArray(reviews) ? reviews : [];
 
   return {
     valid: errors.length === 0,
     errors,
     normalized: {
       ...data,
-      areas,
-      goals,
-      reviews,
+      areas: safeAreas,
+      goals: safeGoals,
+      reviews: safeReviews,
       version: DATA_VERSION
     },
     summary: {
-      areas: areas.length,
-      goals: goals.length,
-      reviews: reviews.length
+      areas: safeAreas.length,
+      goals: safeGoals.length,
+      reviews: safeReviews.length
     }
   };
 }
