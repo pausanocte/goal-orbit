@@ -2,7 +2,7 @@
 // Orbit v3 - アーカイブコンポーネント
 // ==========================================
 
-import { el, clearElement, PRIORITY_CONFIG, FREQUENCY_CONFIG, formatDate, getSubtaskProgress } from '../utils.js';
+import { el, clearElement, PRIORITY_CONFIG, FREQUENCY_CONFIG, formatDate, formatRoutineFrequency, getSubtaskProgress } from '../utils.js';
 import { t } from '../i18n.js';
 import { getArchivedGoals, unarchiveGoal, deleteGoal, getAllAreas, getAreaById, updateArea, deleteArea } from '../store.js';
 import { openGoalModal } from './goal-modal.js';
@@ -248,9 +248,7 @@ function createArchiveCard(goal, index, onRefresh) {
   // Routines: 頻度バッジ
   if (goal.category === 'routines' && goal.frequency) {
     const freqConf = FREQUENCY_CONFIG[goal.frequency] || { labelKey: 'frequency.daily', color: '#F472B6' };
-    const freqText = goal.frequency === 'custom' && goal.frequencyCustom
-      ? goal.frequencyCustom
-      : t(freqConf.labelKey);
+    const freqText = formatRoutineFrequency(goal) || t(freqConf.labelKey);
     card.appendChild(
       el('div', { className: 'goal-card-frequency' },
         el('div', { className: 'frequency-badge', style: `color: ${freqConf.color}; border-color: ${freqConf.color}` },

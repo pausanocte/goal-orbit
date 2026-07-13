@@ -2,7 +2,7 @@
 // Orbit v3.3 - ダッシュボードコンポーネント
 // ==========================================
 
-import { el, clearElement, STATUS_CONFIG, PRIORITY_CONFIG, formatDate, getSubtaskProgress, normalizeDateInput } from '../utils.js';
+import { el, clearElement, STATUS_CONFIG, PRIORITY_CONFIG, FREQUENCY_CUSTOM_PRESETS, formatDate, formatRoutineFrequency, getSubtaskProgress, normalizeDateInput } from '../utils.js';
 import { t } from '../i18n.js';
 import { getStats, getDueSoonGoals, getActiveAreas, getAreaById, getActiveGoals, getAllGoals, updateGoal, toggleSubtask, getDashboardLayout, saveDashboardLayout, deleteGoal, isRoutineCompletedOn, toggleRoutineCompletion } from '../store.js';
 import { openGoalModal } from './goal-modal.js';
@@ -188,7 +188,7 @@ function sortRoutines(routines, sortBy, sortOrder, getAreaById) {
       const valB = pMap[b.priority] ?? 2;
       cmp = valA - valB;
     } else if (sortBy === 'frequency') {
-      const fMap = { daily: 4, weekly: 3, monthly: 2, custom: 1 };
+      const fMap = { daily: 5, weekly: 4, biweekly: 3, monthly: 2, custom: 1 };
       const valA = fMap[a.frequency] ?? 0;
       const valB = fMap[b.frequency] ?? 0;
       cmp = valA - valB;
@@ -414,9 +414,7 @@ export function renderDashboard(container, onNavigate) {
       const areaName = area ? area.name : t('common.unknown');
       const areaColor = area ? area.color : '#6366F1';
       
-      const freqText = (goal.frequency === 'custom' && goal.frequencyCustom)
-        ? goal.frequencyCustom
-        : (goal.frequency ? t(`frequency.${goal.frequency}`) : '');
+      const freqText = formatRoutineFrequency(goal);
       const completedToday = isRoutineCompletedOn(goal);
 
       const statusConf = STATUS_CONFIG[goal.status] || STATUS_CONFIG.active;
@@ -469,13 +467,22 @@ export function renderDashboard(container, onNavigate) {
         onChange: (e) => {
           e.stopPropagation();
           const val = e.target.value;
+          if (val.startsWith('custom:')) {
+            updateGoal(goal.id, { frequency: 'custom', frequencyCustom: val.slice(7) });
+            renderDashboard(container, onNavigate);
+            return;
+          }
           if (val === 'custom') {
             const customVal = prompt(t('dashboard.customFrequencyPrompt'), goal.frequencyCustom || '');
             if (customVal !== null) {
               updateGoal(goal.id, { frequency: 'custom', frequencyCustom: customVal });
             }
           } else {
-            updateGoal(goal.id, { frequency: val, frequencyCustom: null });
+            updateGoal(goal.id, {
+              frequency: val,
+              frequencyCustom: null,
+              frequencyWeekdays: val === 'monthly' ? [] : (goal.frequencyWeekdays || [])
+            });
           }
           renderDashboard(container, onNavigate);
         },
@@ -483,8 +490,13 @@ export function renderDashboard(container, onNavigate) {
       },
         el('option', { value: 'daily', selected: goal.frequency === 'daily' }, t('frequency.daily')),
         el('option', { value: 'weekly', selected: goal.frequency === 'weekly' }, t('frequency.weekly')),
+        el('option', { value: 'biweekly', selected: goal.frequency === 'biweekly' }, t('frequency.biweekly')),
         el('option', { value: 'monthly', selected: goal.frequency === 'monthly' }, t('frequency.monthly')),
-        el('option', { value: 'custom', selected: goal.frequency === 'custom' }, freqText || t('frequency.custom'))
+        el('option', { value: 'custom', selected: goal.frequency === 'custom' }, freqText || t('frequency.custom')),
+        ...FREQUENCY_CUSTOM_PRESETS.map(preset => {
+          const text = t(preset.labelKey);
+          return el('option', { value: `custom:${text}`, selected: goal.frequency === 'custom' && goal.frequencyCustom === text }, text);
+        })
       );
 
       const item = el('div', {

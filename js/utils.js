@@ -94,9 +94,50 @@ export const PRIORITY_CONFIG = {
 export const FREQUENCY_CONFIG = {
   daily: { labelKey: 'frequency.daily', color: '#F472B6' },
   weekly: { labelKey: 'frequency.weekly', color: '#38BDF8' },
+  biweekly: { labelKey: 'frequency.biweekly', color: '#22D3EE' },
   monthly: { labelKey: 'frequency.monthly', color: '#A78BFA' },
   custom: { labelKey: 'frequency.custom', color: '#FB923C' }
 };
+
+export const FREQUENCY_CUSTOM_PRESETS = [
+  { labelKey: 'frequency.preset.twiceWeek' },
+  { labelKey: 'frequency.preset.threeTimesWeek' }
+];
+
+export const WEEKDAY_KEYS = [
+  { value: 'sun', labelKey: 'weekday.sun' },
+  { value: 'mon', labelKey: 'weekday.mon' },
+  { value: 'tue', labelKey: 'weekday.tue' },
+  { value: 'wed', labelKey: 'weekday.wed' },
+  { value: 'thu', labelKey: 'weekday.thu' },
+  { value: 'fri', labelKey: 'weekday.fri' },
+  { value: 'sat', labelKey: 'weekday.sat' }
+];
+
+export function formatWeekdayList(weekdays = []) {
+  const selected = Array.isArray(weekdays) ? weekdays : [];
+  return WEEKDAY_KEYS
+    .filter(day => selected.includes(day.value))
+    .map(day => t(day.labelKey))
+    .join('・');
+}
+
+export function formatRoutineFrequency(goal) {
+  if (!goal?.frequency) return '';
+  const config = FREQUENCY_CONFIG[goal.frequency];
+  const base = goal.frequency === 'custom'
+    ? (goal.frequencyCustom || t('frequency.custom'))
+    : t(config?.labelKey || 'frequency.custom');
+  const weekdays = formatWeekdayList(goal.frequencyWeekdays);
+  return weekdays ? `${base} (${weekdays})` : base;
+}
+
+export function isRoutineScheduledForDate(goal, date = new Date()) {
+  const selected = Array.isArray(goal?.frequencyWeekdays) ? goal.frequencyWeekdays : [];
+  if (selected.length === 0) return true;
+  const weekday = WEEKDAY_KEYS[date.getDay()]?.value;
+  return selected.includes(weekday);
+}
 
 export const AREA_COLORS = [
   '#F59E0B', '#8B5CF6', '#10B981', '#F87171', '#6366F1',

@@ -2,7 +2,7 @@
 // Orbit - Monthly Review
 // ==========================================
 
-import { el, clearElement, getCurrentYearMonth, formatDate, getSubtaskProgress } from '../utils.js';
+import { el, clearElement, getCurrentYearMonth, formatDate, formatRoutineFrequency, getSubtaskProgress } from '../utils.js';
 import { t, getYearMonthOptionsI18n, formatYearMonthI18n } from '../i18n.js';
 import { getReviewByYearMonth, saveReview, getAllReviews, getAreaById, getAllGoals, updateGoal, getRoutineCompletionDaysInMonth } from '../store.js';
 import { openGoalModal } from './goal-modal.js';
@@ -320,17 +320,11 @@ export function renderMonthlyReview(container) {
 
     let metaText = '';
     if (goal.category === 'routines' && goal.frequency) {
-      const frequencyMap = {
-        daily: t('frequency.daily'),
-        weekly: t('frequency.weekly'),
-        monthly: t('frequency.monthly'),
-        custom: goal.frequencyCustom || t('frequency.custom')
-      };
       const doneDays = getRoutineCompletionDaysInMonth(goal, selectedMonth);
       const doneDaysText = doneDays.length > 0
         ? t('routine.completedCount', doneDays.length)
         : t('routine.noCompletedDaysInMonth');
-      metaText = `${t('dashboard.colFrequency')}: ${frequencyMap[goal.frequency] || goal.frequency} / ${doneDaysText}`;
+      metaText = `${t('dashboard.colFrequency')}: ${formatRoutineFrequency(goal) || goal.frequency} / ${doneDaysText}`;
     } else if (goal.category === 'projects') {
       const progress = getSubtaskProgress(goal.subtasks);
       const progressPct = progress ? `${progress.percent}%` : '0%';

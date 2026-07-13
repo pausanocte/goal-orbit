@@ -2,7 +2,7 @@
 // Orbit v3.1 - Area別ページコンポーネント
 // ==========================================
 
-import { el, clearElement, STATUS_CONFIG, PRIORITY_CONFIG, FREQUENCY_CONFIG, formatDate, getDaysUntilDue, getSubtaskProgress, CATEGORY_CONFIG, normalizeDateInput } from '../utils.js';
+import { el, clearElement, STATUS_CONFIG, PRIORITY_CONFIG, FREQUENCY_CONFIG, FREQUENCY_CUSTOM_PRESETS, formatDate, formatRoutineFrequency, getDaysUntilDue, getSubtaskProgress, CATEGORY_CONFIG, normalizeDateInput } from '../utils.js';
 import { t } from '../i18n.js';
 import { getAreaById, getGoalsByAreaAndCategory, deleteGoal, archiveGoal, toggleSubtask, deleteArea, updateGoal, isRoutineCompletedOn, toggleRoutineCompletion } from '../store.js';
 import { openGoalModal } from './goal-modal.js';
@@ -458,9 +458,7 @@ function createGoalCard(goal, area, index, onRefresh) {
   // CategoryがRoutinesの場合: 頻度バッジ/頻度入力
   if (goal.category === 'routines') {
     const freqConf = FREQUENCY_CONFIG[goal.frequency] || { labelKey: 'frequency.daily', color: '#F472B6' };
-    const freqText = goal.frequency === 'custom' && goal.frequencyCustom
-      ? goal.frequencyCustom
-      : (goal.frequency ? t(freqConf.labelKey) : '');
+    const freqText = formatRoutineFrequency(goal);
     const completedToday = isRoutineCompletedOn(goal);
 
     if (currentLayout === 'list') {
@@ -470,13 +468,22 @@ function createGoalCard(goal, area, index, onRefresh) {
         onChange: (e) => {
           e.stopPropagation();
           const val = e.target.value;
+          if (val.startsWith('custom:')) {
+            updateGoal(goal.id, { frequency: 'custom', frequencyCustom: val.slice(7) });
+            onRefresh();
+            return;
+          }
           if (val === 'custom') {
             const customVal = prompt(t('dashboard.customFrequencyPrompt'), goal.frequencyCustom || '');
             if (customVal !== null) {
               updateGoal(goal.id, { frequency: 'custom', frequencyCustom: customVal });
             }
           } else {
-            updateGoal(goal.id, { frequency: val, frequencyCustom: null });
+            updateGoal(goal.id, {
+              frequency: val,
+              frequencyCustom: null,
+              frequencyWeekdays: val === 'monthly' ? [] : (goal.frequencyWeekdays || [])
+            });
           }
           onRefresh();
         },
@@ -484,8 +491,13 @@ function createGoalCard(goal, area, index, onRefresh) {
       },
         el('option', { value: 'daily', selected: goal.frequency === 'daily' }, t('frequency.daily')),
         el('option', { value: 'weekly', selected: goal.frequency === 'weekly' }, t('frequency.weekly')),
+        el('option', { value: 'biweekly', selected: goal.frequency === 'biweekly' }, t('frequency.biweekly')),
         el('option', { value: 'monthly', selected: goal.frequency === 'monthly' }, t('frequency.monthly')),
-        el('option', { value: 'custom', selected: goal.frequency === 'custom' }, freqText || t('frequency.custom'))
+        el('option', { value: 'custom', selected: goal.frequency === 'custom' }, freqText || t('frequency.custom')),
+        ...FREQUENCY_CUSTOM_PRESETS.map(preset => {
+          const text = t(preset.labelKey);
+          return el('option', { value: `custom:${text}`, selected: goal.frequency === 'custom' && goal.frequencyCustom === text }, text);
+        })
       );
       dynamicWrapper.appendChild(
         el('div', { className: 'goal-card-frequency' }, frequencySelect)

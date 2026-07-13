@@ -298,7 +298,7 @@ export function toggleRoutineCompletion(goalId, dateKey = getTodayDateKey()) {
   return updateGoal(goalId, { routineCompletions: nextCompletions });
 }
 
-export function addGoal({ title, description, areaId, category, status = 'active', priority = 'medium', dueDate = null, startDate = null, completedDate = null, subtasks = [], frequency = null, frequencyCustom = null }) {
+export function addGoal({ title, description, areaId, category, status = 'active', priority = 'medium', dueDate = null, startDate = null, completedDate = null, subtasks = [], frequency = null, frequencyCustom = null, frequencyWeekdays = [] }) {
   if (!canAddGoal(category)) {
     throw new Error(`FREE_LIMIT_${category.toUpperCase()}_REACHED`);
   }
@@ -323,6 +323,7 @@ export function addGoal({ title, description, areaId, category, status = 'active
     subtasks: subtasks || [],
     frequency: frequency || null,
     frequencyCustom: frequencyCustom || null,
+    frequencyWeekdays: Array.isArray(frequencyWeekdays) ? frequencyWeekdays : [],
     createdAt: now,
     updatedAt: now
   };

@@ -2307,6 +2307,65 @@ select.form-input option {
   gap: 10px;
 }
 
+.routine-history-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.routine-history-toolbar-label {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.routine-history-month-nav {
+  display: grid;
+  grid-template-columns: 32px minmax(150px, 1fr) 32px;
+  align-items: center;
+  gap: 6px;
+  min-width: 230px;
+}
+
+.routine-history-month-select {
+  min-height: 34px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  font-size: 0.82rem;
+}
+
+.routine-history-nav-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.routine-history-nav-btn:hover:not(:disabled) {
+  border-color: var(--border-light);
+  color: var(--text-primary);
+  background: var(--surface-glass-hover);
+}
+
+.routine-history-nav-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.routine-history-nav-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
 .routine-history-month {
   padding: 12px;
   border: 1px solid var(--border-subtle);
@@ -2370,6 +2429,103 @@ select.form-input option {
   color: #34d399;
   border: 1px solid rgba(16, 185, 129, 0.35);
   font-weight: 700;
+}
+
+.frequency-custom-help {
+  display: block;
+  margin-top: 6px;
+  color: var(--text-tertiary);
+  font-size: 0.74rem;
+}
+
+.frequency-preset-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.frequency-preset-label {
+  width: 100%;
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.frequency-preset-chip {
+  border: 1px solid rgba(245, 158, 11, 0.24);
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.08);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.76rem;
+  padding: 5px 9px;
+  transition: all var(--transition-fast);
+}
+
+.frequency-preset-chip:hover {
+  border-color: rgba(245, 158, 11, 0.45);
+  color: var(--text-primary);
+  background: rgba(245, 158, 11, 0.14);
+}
+
+.frequency-weekday-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.frequency-weekday-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition: all var(--transition-fast);
+}
+
+.frequency-weekday-chip input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.frequency-weekday-chip:has(input:checked) {
+  border-color: rgba(245, 158, 11, 0.55);
+  background: rgba(245, 158, 11, 0.16);
+  color: var(--text-primary);
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.08);
+}
+
+.frequency-weekday-chip:hover {
+  border-color: var(--border-light);
+  color: var(--text-primary);
+}
+
+@media (max-width: 640px) {
+  .routine-history-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .routine-history-month-nav {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .frequency-weekday-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .calendar-sync-option {
@@ -2482,9 +2638,9 @@ select.form-input option {
   border-radius: 4px;
   color: var(--text-secondary);
   font-size: 0.66rem;
-  padding: 1px 4px;
+  padding: 1px 24px 1px 4px;
   outline: none;
-  width: 104px;
+  width: 100%;
   cursor: pointer;
   font-family: inherit;
   color-scheme: dark;
@@ -2493,15 +2649,13 @@ select.form-input option {
 
 .inline-date-picker {
   position: relative;
-  display: inline-grid;
-  grid-template-columns: 104px 26px;
-  align-items: center;
-  gap: 4px;
+  display: inline-block;
+  width: 104px;
   justify-self: start;
 }
 
 .inline-date-picker .inline-edit-date {
-  width: 104px;
+  width: 100%;
 }
 
 .dashboard-compact-item .inline-edit-date {
@@ -2518,8 +2672,12 @@ select.form-input option {
 }
 
 .inline-date-picker-btn {
-  width: 26px;
-  height: 24px;
+  position: absolute;
+  top: 50%;
+  right: 2px;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 20px;
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
   background: transparent;
@@ -2536,11 +2694,12 @@ select.form-input option {
   border-color: var(--border-light);
   color: var(--text-primary);
   background: rgba(255, 255, 255, 0.04);
+  transform: translateY(-50%);
 }
 
 .inline-date-picker-btn svg {
-  width: 13px;
-  height: 13px;
+  width: 12px;
+  height: 12px;
 }
 
 /* === Layout Segment Control (Capsule View Toggle) === */

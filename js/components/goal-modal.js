@@ -2,7 +2,7 @@
 // Orbit v3 - 目標モーダルコンポーネント
 // ==========================================
 
-import { el, STATUS_CONFIG, PRIORITY_CONFIG, FREQUENCY_CONFIG, CATEGORY_CONFIG, generateId, createDatePicker, registerEscapeClose } from '../utils.js';
+import { el, STATUS_CONFIG, PRIORITY_CONFIG, FREQUENCY_CONFIG, FREQUENCY_CUSTOM_PRESETS, WEEKDAY_KEYS, CATEGORY_CONFIG, generateId, createDatePicker, registerEscapeClose } from '../utils.js';
 import { t, formatYearMonthI18n } from '../i18n.js';
 import { addGoal, updateGoal, getGoalById, getActiveAreas, canAddGoal, getReviewsByGoalId, getRoutineCompletionDates, toggleRoutineCompletion } from '../store.js';
 import { openAreaModal } from './area-modal.js';
@@ -74,7 +74,7 @@ function getYearMonthRange(startYearMonth, endYearMonth) {
   return months;
 }
 
-function createRoutineCompletionHistory(goal) {
+function createRoutineCompletionHistory(goal, selectedYearMonth = null) {
   const dates = getRoutineCompletionDates(goal);
   const section = el('div', { className: 'form-field routine-completion-history' },
     el('label', { className: 'form-label' }, t('routine.completionHistory')),
@@ -94,19 +94,63 @@ function createRoutineCompletionHistory(goal) {
   getYearMonthRange(startYearMonth, currentYearMonth).forEach(yearMonth => {
     if (!byMonth.has(yearMonth)) byMonth.set(yearMonth, []);
   });
+  if (!byMonth.has(currentYearMonth)) byMonth.set(currentYearMonth, []);
 
-  const list = el('div', { className: 'routine-history-list' });
-  Array.from(byMonth.entries())
-    .sort((a, b) => b[0].localeCompare(a[0]))
-    .forEach(([yearMonth, days]) => {
-      list.appendChild(createRoutineMonthCalendar(goal.id, yearMonth, days, () => {
-        const currentGoal = getGoalById(goal.id);
-        if (!currentGoal) return;
-        section.replaceWith(createRoutineCompletionHistory(currentGoal));
-        if (window.lucide) window.lucide.createIcons();
-      }));
-    });
+  const monthOptions = Array.from(byMonth.keys()).sort((a, b) => b.localeCompare(a));
+  const activeYearMonth = selectedYearMonth && byMonth.has(selectedYearMonth)
+    ? selectedYearMonth
+    : (monthOptions.includes(currentYearMonth) ? currentYearMonth : monthOptions[0]);
+  const activeMonthIndex = monthOptions.indexOf(activeYearMonth);
 
+  const replaceHistory = (nextYearMonth) => {
+    const currentGoal = getGoalById(goal.id);
+    if (!currentGoal) return;
+    section.replaceWith(createRoutineCompletionHistory(currentGoal, nextYearMonth));
+    if (window.lucide) window.lucide.createIcons();
+  };
+
+  const monthSelect = el('select', {
+    className: 'form-input routine-history-month-select',
+    'aria-label': t('routine.historyMonthLabel'),
+    onChange: (event) => replaceHistory(event.target.value)
+  });
+  monthOptions.forEach(yearMonth => {
+    monthSelect.appendChild(el('option', {
+      value: yearMonth,
+      selected: yearMonth === activeYearMonth
+    }, formatYearMonthI18n(yearMonth)));
+  });
+
+  const toolbar = el('div', { className: 'routine-history-toolbar' },
+    el('span', { className: 'routine-history-toolbar-label' }, t('routine.historyMonthLabel')),
+    el('div', { className: 'routine-history-month-nav' },
+      el('button', {
+        type: 'button',
+        className: 'routine-history-nav-btn',
+        title: t('routine.previousMonth'),
+        disabled: activeMonthIndex >= monthOptions.length - 1,
+        onClick: () => {
+          if (activeMonthIndex < monthOptions.length - 1) replaceHistory(monthOptions[activeMonthIndex + 1]);
+        }
+      }, el('i', { 'data-lucide': 'chevron-left' })),
+      monthSelect,
+      el('button', {
+        type: 'button',
+        className: 'routine-history-nav-btn',
+        title: t('routine.nextMonth'),
+        disabled: activeMonthIndex <= 0,
+        onClick: () => {
+          if (activeMonthIndex > 0) replaceHistory(monthOptions[activeMonthIndex - 1]);
+        }
+      }, el('i', { 'data-lucide': 'chevron-right' }))
+    )
+  );
+
+  const list = el('div', { className: 'routine-history-list' },
+    createRoutineMonthCalendar(goal.id, activeYearMonth, byMonth.get(activeYearMonth) || [], () => replaceHistory(activeYearMonth))
+  );
+
+  section.appendChild(toolbar);
   section.appendChild(list);
   return section;
 }
@@ -402,7 +446,23 @@ export function openGoalModal(goalId, defaultArea = null, onSave = null) {
       // 頻度
       const freqSelect = el('select', { name: 'frequency', className: 'form-input', onChange: () => {
         const customField = dynamicContainer.querySelector('.freq-custom-field');
+        const weekdaysField = dynamicContainer.querySelector('.frequency-weekdays-field');
+        if (freqSelect.value.startsWith('preset:')) {
+          const presetText = t(freqSelect.value.slice(7));
+          freqSelect.value = 'custom';
+          if (customField) {
+            customField.style.display = 'block';
+            const fieldInput = customField.querySelector('input[name="frequencyCustom"]');
+            if (fieldInput) {
+              fieldInput.value = presetText;
+              fieldInput.focus();
+            }
+          }
+          if (weekdaysField) weekdaysField.style.display = 'block';
+          return;
+        }
         if (customField) customField.style.display = freqSelect.value === 'custom' ? 'block' : 'none';
+        if (weekdaysField) weekdaysField.style.display = freqSelect.value === 'monthly' ? 'none' : 'block';
       }});
       freqSelect.appendChild(el('option', { value: '' }, '---'));
       for (const [key, config] of Object.entries(FREQUENCY_CONFIG)) {
@@ -410,6 +470,11 @@ export function openGoalModal(goalId, defaultArea = null, onSave = null) {
         if (goal?.frequency === key) opt.selected = true;
         freqSelect.appendChild(opt);
       }
+      const presetGroup = el('optgroup', { label: t('modal.frequencyPresets') });
+      FREQUENCY_CUSTOM_PRESETS.forEach(preset => {
+        presetGroup.appendChild(el('option', { value: `preset:${preset.labelKey}` }, t(preset.labelKey)));
+      });
+      freqSelect.appendChild(presetGroup);
       dynamicContainer.appendChild(createField(t('modal.frequency'), freqSelect));
 
       // カスタム頻度入力
@@ -419,10 +484,58 @@ export function openGoalModal(goalId, defaultArea = null, onSave = null) {
         name: 'frequencyCustom',
         className: 'form-input',
         placeholder: t('modal.frequencyCustomPlaceholder'),
-        value: goal?.frequencyCustom || ''
+        value: goal?.frequencyCustom || '',
+        onInput: () => {
+          if (customInput.value.trim()) {
+            freqSelect.value = 'custom';
+            customField.style.display = 'block';
+          }
+        }
       });
       customField.appendChild(customInput);
+      customField.appendChild(el('small', { className: 'frequency-custom-help' }, t('modal.frequencyCustomHelp')));
+      customField.appendChild(
+        el('div', { className: 'frequency-preset-group', 'aria-label': t('modal.frequencyPresets') },
+          el('span', { className: 'frequency-preset-label' }, t('modal.frequencyPresets')),
+          ...FREQUENCY_CUSTOM_PRESETS.map(preset => el('button', {
+            type: 'button',
+            className: 'frequency-preset-chip',
+            onClick: () => {
+              freqSelect.value = 'custom';
+              customField.style.display = 'block';
+              customInput.value = t(preset.labelKey);
+              customInput.focus();
+            }
+          }, t(preset.labelKey)))
+        )
+      );
       dynamicContainer.appendChild(customField);
+
+      const selectedWeekdays = Array.isArray(goal?.frequencyWeekdays) ? goal.frequencyWeekdays : [];
+      const weekdaysField = el('div', {
+        className: 'form-field frequency-weekdays-field',
+        style: `display: ${goal?.frequency === 'monthly' ? 'none' : 'block'}`
+      },
+        el('label', { className: 'form-label' }, t('modal.frequencyWeekdays')),
+        el('small', { className: 'frequency-custom-help' }, t('modal.frequencyWeekdaysHelp')),
+        el('div', { className: 'frequency-weekday-grid' },
+          ...WEEKDAY_KEYS.map(day => {
+            const inputId = `frequency-weekday-${day.value}`;
+            const checkbox = el('input', {
+              type: 'checkbox',
+              name: 'frequencyWeekdays',
+              id: inputId,
+              value: day.value,
+              checked: selectedWeekdays.includes(day.value) ? 'checked' : undefined
+            });
+            return el('label', { className: 'frequency-weekday-chip', htmlFor: inputId },
+              checkbox,
+              el('span', {}, t(day.labelKey))
+            );
+          })
+        )
+      );
+      dynamicContainer.appendChild(weekdaysField);
     }
 
     if (window.lucide) window.lucide.createIcons();
@@ -527,11 +640,15 @@ async function handleSubmit(form, isEdit, goalId, onSave, pickers = {}) {
     }
     data.frequency = null;
     data.frequencyCustom = null;
+    data.frequencyWeekdays = [];
   }
   // Routines: 頻度
   else if (data.category === 'routines') {
     data.frequency = form.frequency?.value || null;
     data.frequencyCustom = form.frequencyCustom?.value?.trim() || null;
+    data.frequencyWeekdays = data.frequency === 'monthly'
+      ? []
+      : Array.from(form.querySelectorAll('input[name="frequencyWeekdays"]:checked')).map(input => input.value);
     data.dueDate = null;
     data.subtasks = [];
   }
@@ -541,6 +658,7 @@ async function handleSubmit(form, isEdit, goalId, onSave, pickers = {}) {
     data.subtasks = [];
     data.frequency = null;
     data.frequencyCustom = null;
+    data.frequencyWeekdays = [];
   }
 
   if (data.status === 'completed' && !data.completedDate) {
@@ -548,8 +666,8 @@ async function handleSubmit(form, isEdit, goalId, onSave, pickers = {}) {
     return;
   }
 
-  if (form.addToCalendar?.checked && !data.dueDate && !data.startDate && !data.completedDate) {
-    alert(t('calendar.dateRequired'));
+  if (form.addToCalendar?.checked && !canCreateCalendarEvent(data)) {
+    alert(t(data.category === 'routines' && data.frequency ? 'calendar.routineDateRequired' : 'calendar.dateRequired'));
     return;
   }
 
@@ -570,7 +688,7 @@ async function handleSubmit(form, isEdit, goalId, onSave, pickers = {}) {
 
   if (form.addToCalendar?.checked && savedGoal) {
     if (!canCreateCalendarEvent(savedGoal)) {
-      alert(t('calendar.dateRequired'));
+      alert(t(savedGoal.category === 'routines' && savedGoal.frequency ? 'calendar.routineDateRequired' : 'calendar.dateRequired'));
       return;
     }
 

@@ -2,7 +2,7 @@
 // Orbit - Today Page
 // ==========================================
 
-import { el, clearElement, formatDate } from '../utils.js';
+import { el, clearElement, formatDate, formatRoutineFrequency, isRoutineScheduledForDate } from '../utils.js';
 import { t } from '../i18n.js';
 import { getActiveGoals, getAreaById, getDueSoonGoals, isRoutineCompletedOn, toggleRoutineCompletion } from '../store.js';
 import { openGoalModal } from './goal-modal.js';
@@ -45,7 +45,7 @@ function createGoalListItem(goal, onRefresh, text) {
 
   const meta = [areaName];
   if (goal.dueDate) meta.push(`${text.dueDate}: ${formatDate(goal.dueDate)}`);
-  if (goal.frequency) meta.push(`${text.frequency}: ${goal.frequencyCustom || goal.frequency}`);
+  if (goal.frequency) meta.push(`${text.frequency}: ${formatRoutineFrequency(goal)}`);
   if (goal.updatedAt) {
     const days = Math.max(0, Math.floor((Date.now() - Date.parse(goal.updatedAt)) / (24 * 60 * 60 * 1000)));
     meta.push(text.updatedDaysAgo(days));
@@ -123,6 +123,7 @@ export function renderTodayPage(container) {
     .slice(0, 8);
   const routines = activeGoals
     .filter(goal => goal.category === 'routines')
+    .filter(goal => isRoutineScheduledForDate(goal))
     .sort((a, b) => a.title.localeCompare(b.title))
     .slice(0, 8);
   const staleGoals = getStaleGoals(activeGoals).slice(0, 8);
