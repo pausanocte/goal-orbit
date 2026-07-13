@@ -3,21 +3,15 @@
 // ==========================================
 
 import { el, clearElement, getCurrentYearMonth, formatDate, formatRoutineFrequency, getSubtaskProgress } from '../utils.js';
-import { t, getYearMonthOptionsI18n, formatYearMonthI18n } from '../i18n.js';
+import { t, getLang, getYearMonthOptionsI18n, formatYearMonthI18n } from '../i18n.js';
 import { getReviewByYearMonth, saveReview, getAllReviews, getAreaById, getAllGoals, updateGoal, getRoutineCompletionDaysInMonth } from '../store.js';
-import { openGoalModal } from './goal-modal.js?v=20260714-9';
+import { openGoalModal } from './goal-modal.js';
 
 const REVIEW_AUTOSAVE_DELAY_MS = 800;
 let reviewLeaveHandler = null;
 
 export function flushMonthlyReviewAutosave() {
   reviewLeaveHandler?.();
-}
-
-function getMonthEndDate(yearMonth) {
-  const [year, month] = yearMonth.split('-').map(Number);
-  const lastDay = new Date(year, month, 0).getDate();
-  return `${yearMonth}-${String(lastDay).padStart(2, '0')}`;
 }
 
 function isActiveInMonth(item, yearMonth) {
@@ -41,10 +35,6 @@ function isActiveInMonth(item, yearMonth) {
   return true;
 }
 
-function isCompletedInMonth(item, yearMonth) {
-  return !!item.completedDate && item.completedDate.startsWith(`${yearMonth}-`);
-}
-
 export function renderMonthlyReview(container) {
   clearElement(container);
   reviewLeaveHandler = null;
@@ -61,7 +51,6 @@ export function renderMonthlyReview(container) {
 
   function collectReviewPayload(form, reviewGoals) {
     const goalsData = {};
-    const monthEndDate = getMonthEndDate(selectedMonth);
 
     reviewGoals.forEach(item => {
       const checkbox = document.getElementById(`achieved-${item.id}`);
@@ -71,19 +60,6 @@ export function renderMonthlyReview(container) {
 
       goalsData[item.id] = { achieved, comment };
 
-      if (item.category === 'projects') {
-        if (achieved && item.status !== 'completed') {
-          updateGoal(item.id, {
-            status: 'completed',
-            completedDate: item.completedDate || monthEndDate
-          });
-        } else if (!achieved && item.status === 'completed') {
-          updateGoal(item.id, {
-            status: 'active',
-            completedDate: null
-          });
-        }
-      }
     });
 
     return {
@@ -159,6 +135,12 @@ export function renderMonthlyReview(container) {
   });
 
   autosaveLabel = el('span', { className: 'review-autosave-status' }, t('review.saved'));
+  const applyLabel = t('review.applyToGoals');
+  const applyToGoalsBtn = el('button', {
+    type: 'button',
+    className: 'btn btn-ghost btn-sm',
+    onClick: () => applyReviewToGoals()
+  }, applyLabel === 'review.applyToGoals' ? (getLang() === 'ja' ? '達成をProject完了に反映' : 'Apply achieved projects') : applyLabel);
 
   controlBar.appendChild(
     el('div', { className: 'review-month-selector' },
@@ -167,6 +149,7 @@ export function renderMonthlyReview(container) {
     )
   );
   controlBar.appendChild(autosaveLabel);
+  controlBar.appendChild(applyToGoalsBtn);
 
   stickyHeader.appendChild(header);
   stickyHeader.appendChild(controlBar);
@@ -200,8 +183,7 @@ export function renderMonthlyReview(container) {
     const allGoals = getAllGoals();
     const reviewGoals = allGoals.filter(goal => {
       if (goal.category === 'resources') return false;
-      if (!isActiveInMonth(goal, selectedMonth)) return false;
-      return !isCompletedInMonth(goal, selectedMonth);
+      return isActiveInMonth(goal, selectedMonth);
     });
 
     const routines = reviewGoals.filter(goal => goal.category === 'routines');
@@ -280,6 +262,36 @@ export function renderMonthlyReview(container) {
     form.addEventListener('change', scheduleAutosave);
 
     if (window.lucide) window.lucide.createIcons();
+  }
+
+  function getMonthEndDate(yearMonth) {
+    const [year, month] = yearMonth.split('-').map(Number);
+    const lastDay = new Date(year, month, 0).getDate();
+    return `${yearMonth}-${String(lastDay).padStart(2, '0')}`;
+  }
+
+  function applyReviewToGoals() {
+    if (!currentSaveContext) return;
+
+    flushAutosave(false);
+    const { form, reviewGoals } = currentSaveContext;
+    const payload = collectReviewPayload(form, reviewGoals);
+    const monthEndDate = getMonthEndDate(selectedMonth);
+    saveReview(payload);
+    renderPastReviews(pastReviewsSection);
+
+    reviewGoals.forEach(goal => {
+      const reviewGoal = payload.goals[goal.id];
+      if (goal.category !== 'projects' || !reviewGoal?.achieved || goal.status === 'completed') return;
+      updateGoal(goal.id, {
+        status: 'completed',
+        completedDate: goal.completedDate || monthEndDate
+      });
+    });
+
+    const appliedMessage = t('review.appliedToGoals');
+    showToast(appliedMessage === 'review.appliedToGoals' ? (getLang() === 'ja' ? '達成チェックをProjectに反映しました' : 'Applied achieved reviews to projects') : appliedMessage);
+    renderReviewForm();
   }
 
   function createReviewGoalCard(goal, review) {

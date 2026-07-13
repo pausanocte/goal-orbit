@@ -2,21 +2,23 @@
 // Orbit v3 - アプリ初期化・ルーティング
 // ==========================================
 
-import { renderSidebar } from './components/sidebar.js?v=20260714-9';
-import { renderDashboard } from './components/dashboard.js?v=20260714-9';
-import { renderTodayPage } from './components/today-page.js?v=20260714-9';
-import { renderAreaPage } from './components/area-page.js?v=20260714-9';
-import { renderMonthlyReview, flushMonthlyReviewAutosave } from './components/monthly-review.js?v=20260714-9';
-import { renderArchives } from './components/archives.js?v=20260714-9';
+import { renderSidebar } from './components/sidebar.js';
+import { renderDashboard } from './components/dashboard.js';
+import { renderTodayPage } from './components/today-page.js';
+import { renderAreaPage } from './components/area-page.js';
+import { renderMonthlyReview, flushMonthlyReviewAutosave } from './components/monthly-review.js';
+import { renderArchives } from './components/archives.js';
 import { openSyncConflictModal } from './components/sync-conflict-modal.js';
 import { migrateIfNeeded, getFullData, restoreFullData, getLastModified, initializeSampleDataIfNeeded, hasLocalUserChanges, markDataSynced, saveRecoveryBackup, setPremiumUnlocked } from './store.js';
-import { initDriveApi, isDriveAuthorized, downloadBackup, uploadBackup, findExistingBackupFile } from './services/drive-api.js?v=20260714-9';
-import { refreshPremiumEntitlement } from './services/premium-api.js?v=20260714-9';
+import { initDriveApi, isDriveAuthorized, downloadBackup, uploadBackup, findExistingBackupFile } from './services/drive-api.js';
+import { refreshPremiumEntitlement } from './services/premium-api.js';
+import { setRetryDriveSyncHandler, setSyncStatus } from './sync-state.js';
 
-export const appState = { syncStatus: 'init' };
 let syncDebounceTimer = null;
 let syncReady = false;
 let startupSyncInProgress = false;
+let localSyncInProgress = false;
+let localSyncQueued = false;
 const SYNC_CONFLICT_TOLERANCE_MS = 30 * 1000;
 
 let currentPage = 'dashboard';
@@ -44,7 +46,7 @@ export function triggerSidebarRender() {
 }
 
 function handleDriveStatusChange(status) {
-  appState.syncStatus = status;
+  setSyncStatus(status);
   if (status === 'authorized') {
     refreshPremiumAfterLogin()
       .catch(err => console.warn('Premium status check failed', err))
@@ -80,7 +82,7 @@ async function performStartupSync() {
   if (startupSyncInProgress) return;
   startupSyncInProgress = true;
   syncReady = false;
-  appState.syncStatus = 'syncing';
+  setSyncStatus('syncing');
   triggerSidebarRender();
 
   try {
@@ -115,7 +117,7 @@ async function performStartupSync() {
           if (!uploaded) throw new Error('DRIVE_BACKUP_UPLOAD_FAILED');
           markDataSynced(localModified);
         } else {
-          appState.syncStatus = 'conflict';
+          setSyncStatus('conflict');
           triggerSidebarRender();
           return;
         }
@@ -128,13 +130,13 @@ async function performStartupSync() {
     }
 
     syncReady = true;
-    appState.syncStatus = 'synced';
+    setSyncStatus('synced');
     if (hasLocalUserChanges()) {
       window.dispatchEvent(new Event('orbitDataChanged'));
     }
   } catch (err) {
     console.error('Startup sync failed', err);
-    appState.syncStatus = 'error';
+    setSyncStatus('error');
   } finally {
     startupSyncInProgress = false;
     triggerSidebarRender();
@@ -144,38 +146,51 @@ async function performStartupSync() {
 window.addEventListener('orbitDataChanged', async (event) => {
   if (!isDriveAuthorized() || !syncReady) return;
 
-  appState.syncStatus = 'syncing';
-  triggerSidebarRender();
-
   clearTimeout(syncDebounceTimer);
 
   if (event?.detail?.immediateSync) {
-    try {
-      const localData = getFullData();
-      const uploaded = await uploadBackup(localData);
-      if (!uploaded) throw new Error('DRIVE_BACKUP_UPLOAD_FAILED');
-      markDataSynced(localData.lastModified);
-    } catch (err) {
-      console.error(err);
-      appState.syncStatus = 'error';
-      triggerSidebarRender();
-    }
+    await syncLocalData();
     return;
   }
 
+  setSyncStatus('syncing');
+  triggerSidebarRender();
+
   syncDebounceTimer = setTimeout(async () => {
-    try {
+    await syncLocalData();
+  }, 5000); // 5 seconds debounce
+});
+
+async function syncLocalData() {
+  if (localSyncInProgress) {
+    localSyncQueued = true;
+    setSyncStatus('syncing');
+    triggerSidebarRender();
+    return;
+  }
+
+  localSyncInProgress = true;
+  setSyncStatus('syncing');
+  triggerSidebarRender();
+
+  try {
+    do {
+      localSyncQueued = false;
       const localData = getFullData();
       const uploaded = await uploadBackup(localData);
       if (!uploaded) throw new Error('DRIVE_BACKUP_UPLOAD_FAILED');
       markDataSynced(localData.lastModified);
-    } catch(err) {
-      console.error(err);
-      appState.syncStatus = 'error';
-      triggerSidebarRender();
-    }
-  }, 5000); // 5 seconds debounce
-});
+    } while (localSyncQueued);
+
+    setSyncStatus('synced');
+  } catch (err) {
+    console.error(err);
+    setSyncStatus('error');
+  } finally {
+    localSyncInProgress = false;
+    triggerSidebarRender();
+  }
+}
 
 function dataSetsMatch(localData, driveData) {
   const comparable = data => ({
@@ -221,6 +236,9 @@ function renderPage() {
 
 // 初期レンダリング
 document.addEventListener('DOMContentLoaded', () => {
+  if (window.__orbitAppInitialized) return;
+  window.__orbitAppInitialized = true;
+
   const savedTheme = localStorage.getItem('orbit_theme') || 'dark';
   if (savedTheme === 'light') {
     document.body.classList.add('light-theme');
@@ -229,6 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   setPremiumUnlocked(false);
+  setRetryDriveSyncHandler(retryDriveSync);
   migrateIfNeeded(); // v2からのマイグレーション
   initializeSampleDataIfNeeded(); // サンプルデータの投入
   initDriveApi(handleDriveStatusChange);

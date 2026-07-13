@@ -5,7 +5,7 @@
 import { el, clearElement, STATUS_CONFIG, PRIORITY_CONFIG, formatDate, formatRoutineFrequency, getSubtaskProgress, normalizeDateInput } from '../utils.js';
 import { t } from '../i18n.js';
 import { getStats, getDueSoonGoals, getActiveAreas, getAreaById, getActiveGoals, getAllGoals, updateGoal, toggleSubtask, getDashboardLayout, saveDashboardLayout, deleteGoal, isRoutineCompletedOn, toggleRoutineCompletion } from '../store.js';
-import { openGoalModal } from './goal-modal.js?v=20260714-9';
+import { openGoalModal } from './goal-modal.js';
 import { openAreaModal } from './area-modal.js';
 
 const DASHBOARD_SETTINGS_KEY = 'orbit_dashboard_settings';

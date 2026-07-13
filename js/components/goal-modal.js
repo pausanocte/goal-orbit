@@ -6,7 +6,7 @@ import { el, STATUS_CONFIG, PRIORITY_CONFIG, FREQUENCY_CONFIG, WEEKDAY_KEYS, CAT
 import { t, formatYearMonthI18n } from '../i18n.js';
 import { addGoal, updateGoal, getGoalById, getActiveAreas, canAddGoal, getReviewsByGoalId, getRoutineCompletionDates, toggleRoutineCompletion } from '../store.js';
 import { openAreaModal } from './area-modal.js';
-import { canCreateCalendarEvent, deleteGoalCalendarEvent, getCalendarValidationErrorKey, upsertGoalCalendarEvent } from '../services/calendar-api.js?v=20260714-9';
+import { canCreateCalendarEvent, deleteGoalCalendarEvent, getCalendarValidationErrorKey, upsertGoalCalendarEvent } from '../services/calendar-api.js';
 
 let modalOverlay = null;
 let removeEscapeClose = null;

@@ -5,7 +5,7 @@
 import { el, clearElement, formatDate, formatRoutineFrequency, isRoutineScheduledForDate } from '../utils.js';
 import { t } from '../i18n.js';
 import { getActiveGoals, getAreaById, getDueSoonGoals, isRoutineCompletedOn, toggleRoutineCompletion } from '../store.js';
-import { openGoalModal } from './goal-modal.js?v=20260714-9';
+import { openGoalModal } from './goal-modal.js';
 
 const STALE_GOAL_DAYS = 14;
 
