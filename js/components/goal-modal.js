@@ -6,7 +6,7 @@ import { el, STATUS_CONFIG, PRIORITY_CONFIG, FREQUENCY_CONFIG, WEEKDAY_KEYS, CAT
 import { t, formatYearMonthI18n } from '../i18n.js';
 import { addGoal, updateGoal, getGoalById, getActiveAreas, canAddGoal, getReviewsByGoalId, getRoutineCompletionDates, toggleRoutineCompletion } from '../store.js';
 import { openAreaModal } from './area-modal.js';
-import { canCreateCalendarEvent, upsertGoalCalendarEvent } from '../services/calendar-api.js';
+import { canCreateCalendarEvent, getCalendarValidationErrorKey, upsertGoalCalendarEvent } from '../services/calendar-api.js';
 
 let modalOverlay = null;
 let removeEscapeClose = null;
@@ -670,14 +670,8 @@ async function handleSubmit(form, isEdit, goalId, onSave, pickers = {}) {
     return;
   }
 
-  const getCalendarDateRequiredKey = (goalData) => {
-    if (goalData.category === 'routines' && goalData.frequency) return 'calendar.routineDateRequired';
-    if (goalData.category === 'projects') return 'calendar.projectDueDateRequired';
-    return 'calendar.dateRequired';
-  };
-
   if (form.addToCalendar?.checked && !canCreateCalendarEvent(data)) {
-    alert(t(getCalendarDateRequiredKey(data)));
+    alert(t(getCalendarValidationErrorKey(data)));
     return;
   }
 
@@ -698,7 +692,7 @@ async function handleSubmit(form, isEdit, goalId, onSave, pickers = {}) {
 
   if (form.addToCalendar?.checked && savedGoal) {
     if (!canCreateCalendarEvent(savedGoal)) {
-      alert(t(getCalendarDateRequiredKey(savedGoal)));
+      alert(t(getCalendarValidationErrorKey(savedGoal)));
       return;
     }
 

@@ -56,6 +56,21 @@ function getRoutineWeekdays(goal) {
     : [];
 }
 
+function getStartWeekday(goal) {
+  if (!goal.startDate) return null;
+  const date = new Date(`${goal.startDate}T00:00:00`);
+  return GOOGLE_WEEKDAYS[WEEKDAY_INDEX[date.getDay()]] || null;
+}
+
+function getRoutineCalendarWeekdays(goal) {
+  const selected = getRoutineWeekdays(goal);
+  if (selected.length > 0 || goal.frequency === 'daily' || goal.frequency === 'monthly' || goal.frequency === 'custom') {
+    return selected;
+  }
+  const startWeekday = getStartWeekday(goal);
+  return startWeekday ? [startWeekday] : [];
+}
+
 function getFirstRoutineOccurrenceDate(goal) {
   const selected = Array.isArray(goal.frequencyWeekdays) ? goal.frequencyWeekdays : [];
   if (!goal.startDate || selected.length === 0 || goal.frequency === 'monthly') return goal.startDate;
@@ -101,9 +116,12 @@ function buildRoutineRecurrence(goal) {
   if (!goal.startDate || !goal.completedDate || compareDateValues(goal.startDate, goal.completedDate) > 0) {
     throw new Error('CALENDAR_ROUTINE_DATE_REQUIRED');
   }
+  if (compareDateValues(getFirstRoutineOccurrenceDate(goal), goal.completedDate) > 0) {
+    throw new Error('CALENDAR_ROUTINE_WEEKDAY_RANGE_REQUIRED');
+  }
 
   const rules = [];
-  const weekdays = getRoutineWeekdays(goal);
+  const weekdays = getRoutineCalendarWeekdays(goal);
 
   if (goal.frequency === 'daily') {
     rules.push('FREQ=DAILY');
@@ -180,13 +198,23 @@ async function calendarRequest(path, options = {}) {
 }
 
 export function canCreateCalendarEvent(goal) {
+  return !getCalendarValidationErrorKey(goal);
+}
+
+export function getCalendarValidationErrorKey(goal) {
   if (goal.category === 'routines' && goal.frequency) {
-    return Boolean(goal.startDate && goal.completedDate && compareDateValues(goal.startDate, goal.completedDate) <= 0);
+    if (!goal.startDate || !goal.completedDate || compareDateValues(goal.startDate, goal.completedDate) > 0) {
+      return 'calendar.routineDateRequired';
+    }
+    if (compareDateValues(getFirstRoutineOccurrenceDate(goal), goal.completedDate) > 0) {
+      return 'calendar.routineWeekdayRangeRequired';
+    }
+    return null;
   }
   if (goal.category === 'projects') {
-    return Boolean(goal.dueDate);
+    return goal.dueDate ? null : 'calendar.projectDueDateRequired';
   }
-  return Boolean(getGoalCalendarDate(goal));
+  return getGoalCalendarDate(goal) ? null : 'calendar.dateRequired';
 }
 
 export async function upsertGoalCalendarEvent(goal) {
