@@ -5,7 +5,7 @@
 import { el, clearElement, STATUS_CONFIG, PRIORITY_CONFIG, FREQUENCY_CONFIG, formatDate, formatRoutineFrequency, getDaysUntilDue, getSubtaskProgress, CATEGORY_CONFIG, normalizeDateInput } from '../utils.js';
 import { t } from '../i18n.js';
 import { getAreaById, getGoalsByAreaAndCategory, deleteGoal, archiveGoal, toggleSubtask, deleteArea, updateGoal, isRoutineCompletedOn, toggleRoutineCompletion } from '../store.js';
-import { openGoalModal } from './goal-modal.js?v=20260714-8';
+import { openGoalModal } from './goal-modal.js?v=20260714-9';
 import { openAreaModal } from './area-modal.js';
 
 function requestCompletedDate(currentValue = '') {

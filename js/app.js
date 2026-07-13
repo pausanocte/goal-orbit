@@ -2,16 +2,16 @@
 // Orbit v3 - アプリ初期化・ルーティング
 // ==========================================
 
-import { renderSidebar } from './components/sidebar.js?v=20260714-8';
-import { renderDashboard } from './components/dashboard.js?v=20260714-8';
-import { renderTodayPage } from './components/today-page.js?v=20260714-8';
-import { renderAreaPage } from './components/area-page.js?v=20260714-8';
-import { renderMonthlyReview, flushMonthlyReviewAutosave } from './components/monthly-review.js?v=20260714-8';
-import { renderArchives } from './components/archives.js?v=20260714-8';
+import { renderSidebar } from './components/sidebar.js?v=20260714-9';
+import { renderDashboard } from './components/dashboard.js?v=20260714-9';
+import { renderTodayPage } from './components/today-page.js?v=20260714-9';
+import { renderAreaPage } from './components/area-page.js?v=20260714-9';
+import { renderMonthlyReview, flushMonthlyReviewAutosave } from './components/monthly-review.js?v=20260714-9';
+import { renderArchives } from './components/archives.js?v=20260714-9';
 import { openSyncConflictModal } from './components/sync-conflict-modal.js';
 import { migrateIfNeeded, getFullData, restoreFullData, getLastModified, initializeSampleDataIfNeeded, hasLocalUserChanges, markDataSynced, saveRecoveryBackup, setPremiumUnlocked } from './store.js';
-import { initDriveApi, isDriveAuthorized, downloadBackup, uploadBackup, findExistingBackupFile } from './services/drive-api.js?v=20260714-8';
-import { refreshPremiumEntitlement } from './services/premium-api.js?v=20260714-8';
+import { initDriveApi, isDriveAuthorized, downloadBackup, uploadBackup, findExistingBackupFile } from './services/drive-api.js?v=20260714-9';
+import { refreshPremiumEntitlement } from './services/premium-api.js?v=20260714-9';
 
 export const appState = { syncStatus: 'init' };
 let syncDebounceTimer = null;

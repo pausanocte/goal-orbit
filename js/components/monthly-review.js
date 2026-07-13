@@ -5,7 +5,7 @@
 import { el, clearElement, getCurrentYearMonth, formatDate, formatRoutineFrequency, getSubtaskProgress } from '../utils.js';
 import { t, getYearMonthOptionsI18n, formatYearMonthI18n } from '../i18n.js';
 import { getReviewByYearMonth, saveReview, getAllReviews, getAreaById, getAllGoals, updateGoal, getRoutineCompletionDaysInMonth } from '../store.js';
-import { openGoalModal } from './goal-modal.js?v=20260714-8';
+import { openGoalModal } from './goal-modal.js?v=20260714-9';
 
 const REVIEW_AUTOSAVE_DELAY_MS = 800;
 let reviewLeaveHandler = null;
