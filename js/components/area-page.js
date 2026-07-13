@@ -34,7 +34,7 @@ function createGoalDateSummary(goal) {
     ),
     el('span', { className: 'goal-card-date' },
       el('i', { 'data-lucide': 'calendar-check-2' }),
-      el('span', {}, `${t('common.completed')}: ${goal.completedDate ? formatDate(goal.completedDate) : '-'}`)
+      el('span', {}, `${t(goal.category === 'routines' ? 'common.end' : 'common.completed')}: ${goal.completedDate ? formatDate(goal.completedDate) : '-'}`)
     )
   );
 }
@@ -321,7 +321,9 @@ function createGoalCard(goal, area, index, onRefresh) {
         onChange: (e) => {
           e.stopPropagation();
           const nextStatus = e.target.value;
-          if (nextStatus === 'completed' && !goal.completedDate) {
+          if (goal.category === 'routines') {
+            updateGoal(goal.id, { status: nextStatus });
+          } else if (nextStatus === 'completed' && !goal.completedDate) {
             const completedDate = requestCompletedDate(goal.completedDate);
             if (completedDate === undefined || completedDate === null) {
               e.target.value = goal.status;

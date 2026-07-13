@@ -2512,6 +2512,13 @@ select.form-input option {
   color: var(--text-primary);
 }
 
+.routine-time-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(120px, 0.55fr);
+  gap: 10px;
+  margin-top: 8px;
+}
+
 @media (max-width: 640px) {
   .routine-history-toolbar {
     align-items: stretch;
@@ -2525,6 +2532,10 @@ select.form-input option {
 
   .frequency-weekday-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .routine-time-grid {
+    grid-template-columns: 1fr;
   }
 }
 

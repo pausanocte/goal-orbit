@@ -27,12 +27,21 @@ function toDateValue(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
+function toDateTimeValue(date) {
+  return `${toDateValue(date)}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:00`;
+}
+
 function getGoalCalendarDate(goal) {
+  if (goal.category === 'projects') return goal.dueDate || null;
   return goal.dueDate || goal.startDate || goal.completedDate || null;
 }
 
 function formatUntilDate(dateValue) {
   return String(dateValue || '').replaceAll('-', '');
+}
+
+function formatUntilDateTime(dateValue) {
+  return new Date(`${dateValue}T23:59:59`).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
 }
 
 function getRoutineWeekdays(goal) {
@@ -58,6 +67,27 @@ function getFirstRoutineOccurrenceDate(goal) {
     cursor.setDate(cursor.getDate() + 1);
   }
   return goal.startDate;
+}
+
+function getLocalTimeZone() {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+}
+
+function hasRoutineTime(goal) {
+  return goal.category === 'routines' && /^\d{2}:\d{2}$/.test(goal.routineStartTime || '');
+}
+
+function buildRoutineTimedRange(goal, date) {
+  const start = new Date(`${date}T${goal.routineStartTime}:00`);
+  const duration = Number(goal.routineDurationMinutes || 30);
+  const minutes = Number.isFinite(duration) && duration > 0 ? duration : 30;
+  const end = new Date(start.getTime() + minutes * 60 * 1000);
+  const timeZone = getLocalTimeZone();
+
+  return {
+    start: { dateTime: toDateTimeValue(start), timeZone },
+    end: { dateTime: toDateTimeValue(end), timeZone }
+  };
 }
 
 function buildRoutineRecurrence(goal) {
@@ -87,7 +117,7 @@ function buildRoutineRecurrence(goal) {
   if (weekdays.length > 0 && goal.frequency !== 'monthly') {
     rules.push(`BYDAY=${weekdays.join(',')}`);
   }
-  rules.push(`UNTIL=${formatUntilDate(goal.completedDate)}`);
+  rules.push(`UNTIL=${hasRoutineTime(goal) ? formatUntilDateTime(goal.completedDate) : formatUntilDate(goal.completedDate)}`);
 
   return [`RRULE:${rules.join(';')}`];
 }
@@ -97,6 +127,7 @@ function buildGoalEvent(goal) {
   const date = recurrence ? getFirstRoutineOccurrenceDate(goal) : getGoalCalendarDate(goal);
   if (!date) throw new Error('CALENDAR_DATE_REQUIRED');
   const frequencyText = formatRoutineFrequency(goal);
+  const timedRange = recurrence && hasRoutineTime(goal) ? buildRoutineTimedRange(goal, date) : null;
 
   const event = {
     summary: goal.title,
@@ -106,8 +137,8 @@ function buildGoalEvent(goal) {
       '',
       'Created from Orbit.'
     ].filter(Boolean).join('\n').trim(),
-    start: { date },
-    end: { date: addOneDay(date) },
+    start: timedRange ? timedRange.start : { date },
+    end: timedRange ? timedRange.end : { date: addOneDay(date) },
     extendedProperties: {
       private: {
         orbitGoalId: goal.id,
@@ -146,15 +177,19 @@ export function canCreateCalendarEvent(goal) {
   if (goal.category === 'routines' && goal.frequency) {
     return Boolean(goal.startDate && goal.completedDate && compareDateValues(goal.startDate, goal.completedDate) <= 0);
   }
+  if (goal.category === 'projects') {
+    return Boolean(goal.dueDate);
+  }
   return Boolean(getGoalCalendarDate(goal));
 }
 
 export async function upsertGoalCalendarEvent(goal) {
   const event = buildGoalEvent(goal);
   if (goal.googleCalendarEventId) {
+    const patchEvent = event.recurrence ? event : { ...event, recurrence: [] };
     return calendarRequest(`/calendars/primary/events/${encodeURIComponent(goal.googleCalendarEventId)}`, {
       method: 'PATCH',
-      body: JSON.stringify(event)
+      body: JSON.stringify(patchEvent)
     });
   }
 

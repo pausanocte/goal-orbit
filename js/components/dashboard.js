@@ -401,7 +401,7 @@ export function renderDashboard(container, onNavigate) {
       el('span', { className: 'header-col-title' }, t('dashboard.colGoalArea')),
       el('span', { className: 'header-col-freq' }, t('dashboard.colFrequency')),
       el('span', { className: 'header-col-start' }, t('common.startDate')),
-      el('span', { className: 'header-col-end' }, t('common.completedDate')),
+      el('span', { className: 'header-col-end' }, t('common.endDate')),
       el('span', { className: 'header-col-routine' }, t('routine.today')),
       el('span', { className: 'header-col-status' }, t('dashboard.colStatus')),
       el('span', { className: 'header-col-priority' }, t('dashboard.colPriority')),
@@ -424,18 +424,7 @@ export function renderDashboard(container, onNavigate) {
         onChange: (e) => {
           e.stopPropagation();
           const nextStatus = e.target.value;
-          if (nextStatus === 'completed' && !goal.completedDate) {
-            const completedDate = requestCompletedDate(goal.completedDate);
-            if (completedDate === undefined || completedDate === null) {
-              e.target.value = goal.status;
-              return;
-            }
-            updateGoal(goal.id, { status: nextStatus, completedDate });
-          } else if (nextStatus !== 'completed' && goal.completedDate) {
-            updateGoal(goal.id, { status: nextStatus, completedDate: null });
-          } else {
-            updateGoal(goal.id, { status: nextStatus });
-          }
+          updateGoal(goal.id, { status: nextStatus });
           renderDashboard(container, onNavigate);
         },
         onClick: (e) => e.stopPropagation()

@@ -298,13 +298,13 @@ export function toggleRoutineCompletion(goalId, dateKey = getTodayDateKey()) {
   return updateGoal(goalId, { routineCompletions: nextCompletions });
 }
 
-export function addGoal({ title, description, areaId, category, status = 'active', priority = 'medium', dueDate = null, startDate = null, completedDate = null, subtasks = [], frequency = null, frequencyCustom = null, frequencyWeekdays = [] }) {
+export function addGoal({ title, description, areaId, category, status = 'active', priority = 'medium', dueDate = null, startDate = null, completedDate = null, subtasks = [], frequency = null, frequencyCustom = null, frequencyWeekdays = [], routineStartTime = null, routineDurationMinutes = null }) {
   if (!canAddGoal(category)) {
     throw new Error(`FREE_LIMIT_${category.toUpperCase()}_REACHED`);
   }
   const goals = getAllGoals();
   const now = new Date().toISOString();
-  if (completedDate) {
+  if (completedDate && category !== 'routines') {
     status = 'completed';
   }
   const archived = status === 'completed';
@@ -324,6 +324,8 @@ export function addGoal({ title, description, areaId, category, status = 'active
     frequency: frequency || null,
     frequencyCustom: frequencyCustom || null,
     frequencyWeekdays: Array.isArray(frequencyWeekdays) ? frequencyWeekdays : [],
+    routineStartTime: routineStartTime || null,
+    routineDurationMinutes: routineDurationMinutes || null,
     createdAt: now,
     updatedAt: now
   };
@@ -338,8 +340,9 @@ export function updateGoal(id, updates) {
   if (idx === -1) return null;
   const currentGoal = goals[idx];
   const merged = { ...currentGoal, ...updates, updatedAt: new Date().toISOString() };
+  const isRoutine = merged.category === 'routines';
   
-  if (updates.completedDate !== undefined) {
+  if (updates.completedDate !== undefined && !isRoutine) {
     if (updates.completedDate) {
       merged.status = 'completed';
       merged.archived = true;

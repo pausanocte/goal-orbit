@@ -365,7 +365,7 @@ export function openGoalModal(goalId, defaultArea = null, onSave = null) {
       ));
 
       datesContainer.appendChild(el('div', { style: 'flex: 1; min-width: 0;' },
-        el('label', { className: 'form-label' }, t('modal.completedDate')),
+        el('label', { className: 'form-label' }, t(selectedCategory === 'routines' ? 'modal.routineEndDate' : 'modal.completedDate')),
         completedDatePicker
       ));
 
@@ -536,6 +536,35 @@ export function openGoalModal(goalId, defaultArea = null, onSave = null) {
         )
       );
       dynamicContainer.appendChild(weekdaysField);
+
+      const timeField = el('div', { className: 'form-field routine-time-field' },
+        el('label', { className: 'form-label' }, t('modal.routineTime')),
+        el('div', { className: 'routine-time-grid' },
+          el('div', {},
+            el('small', { className: 'frequency-custom-help' }, t('modal.routineStartTime')),
+            el('input', {
+              type: 'time',
+              name: 'routineStartTime',
+              className: 'form-input',
+              value: goal?.routineStartTime || ''
+            })
+          ),
+          el('div', {},
+            el('small', { className: 'frequency-custom-help' }, t('modal.routineDuration')),
+            el('input', {
+              type: 'number',
+              name: 'routineDurationMinutes',
+              className: 'form-input',
+              min: '5',
+              step: '5',
+              placeholder: '30',
+              value: goal?.routineDurationMinutes || ''
+            })
+          )
+        ),
+        el('small', { className: 'frequency-custom-help' }, t('modal.routineTimeHelp'))
+      );
+      dynamicContainer.appendChild(timeField);
     }
 
     if (window.lucide) window.lucide.createIcons();
@@ -641,6 +670,8 @@ async function handleSubmit(form, isEdit, goalId, onSave, pickers = {}) {
     data.frequency = null;
     data.frequencyCustom = null;
     data.frequencyWeekdays = [];
+    data.routineStartTime = null;
+    data.routineDurationMinutes = null;
   }
   // Routines: 頻度
   else if (data.category === 'routines') {
@@ -649,6 +680,11 @@ async function handleSubmit(form, isEdit, goalId, onSave, pickers = {}) {
     data.frequencyWeekdays = data.frequency === 'monthly'
       ? []
       : Array.from(form.querySelectorAll('input[name="frequencyWeekdays"]:checked')).map(input => input.value);
+    data.routineStartTime = form.routineStartTime?.value || null;
+    const durationValue = Number(form.routineDurationMinutes?.value || 0);
+    data.routineDurationMinutes = data.routineStartTime
+      ? (Number.isFinite(durationValue) && durationValue > 0 ? durationValue : 30)
+      : null;
     data.dueDate = null;
     data.subtasks = [];
   }
@@ -659,15 +695,23 @@ async function handleSubmit(form, isEdit, goalId, onSave, pickers = {}) {
     data.frequency = null;
     data.frequencyCustom = null;
     data.frequencyWeekdays = [];
+    data.routineStartTime = null;
+    data.routineDurationMinutes = null;
   }
 
-  if (data.status === 'completed' && !data.completedDate) {
+  if (data.category !== 'routines' && data.status === 'completed' && !data.completedDate) {
     alert(t('common.completedDateInputHelp'));
     return;
   }
 
+  const getCalendarDateRequiredKey = (goalData) => {
+    if (goalData.category === 'routines' && goalData.frequency) return 'calendar.routineDateRequired';
+    if (goalData.category === 'projects') return 'calendar.projectDueDateRequired';
+    return 'calendar.dateRequired';
+  };
+
   if (form.addToCalendar?.checked && !canCreateCalendarEvent(data)) {
-    alert(t(data.category === 'routines' && data.frequency ? 'calendar.routineDateRequired' : 'calendar.dateRequired'));
+    alert(t(getCalendarDateRequiredKey(data)));
     return;
   }
 
@@ -688,7 +732,7 @@ async function handleSubmit(form, isEdit, goalId, onSave, pickers = {}) {
 
   if (form.addToCalendar?.checked && savedGoal) {
     if (!canCreateCalendarEvent(savedGoal)) {
-      alert(t(savedGoal.category === 'routines' && savedGoal.frequency ? 'calendar.routineDateRequired' : 'calendar.dateRequired'));
+      alert(t(getCalendarDateRequiredKey(savedGoal)));
       return;
     }
 
