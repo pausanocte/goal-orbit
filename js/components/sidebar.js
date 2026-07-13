@@ -6,9 +6,9 @@ import { el } from '../utils.js';
 import { t, toggleLang, getLang } from '../i18n.js';
 import { exportData, importData, getActiveAreas, getAllGoals, getFreeItemLimit, isPremiumUnlocked } from '../store.js';
 import { openAreaModal } from './area-modal.js';
-import { appState, retryDriveSync } from '../app.js';
-import { handleAuthClick, handleSignoutClick, isDriveAuthorized, getUserInfo } from '../services/drive-api.js';
-import { isPremiumPurchaseConfigured, startPremiumPurchase } from '../services/premium-api.js';
+import { appState, retryDriveSync } from '../app.js?v=20260714-3';
+import { handleAuthClick, handleSignoutClick, isDriveAuthorized, getUserInfo } from '../services/drive-api.js?v=20260714-3';
+import { isPremiumPurchaseConfigured, startPremiumPurchase } from '../services/premium-api.js?v=20260714-3';
 
 export function renderSidebar(container, currentPage, onNavigate) {
   container.innerHTML = '';
@@ -39,6 +39,18 @@ export function renderSidebar(container, currentPage, onNavigate) {
   
   if (appState.syncStatus === 'init') {
     syncSection.appendChild(el('div', { style: 'font-size: 12px; color: var(--text-tertiary);' }, 'Loading Google APIs...'));
+  } else if (appState.syncStatus === 'error' && !isDriveAuthorized()) {
+    syncSection.appendChild(el('div', {
+      style: 'font-size: 11px; color: var(--text-tertiary); line-height: 1.5; margin-bottom: 8px;'
+    }, lang === 'ja' ? 'Google連携を読み込めませんでした。アプリはそのまま使えます。' : 'Google sync could not be loaded. You can keep using the app.'));
+    syncSection.appendChild(el('button', {
+      className: 'sidebar-action-btn',
+      style: 'background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-subtle); justify-content: center; width: 100%;',
+      onClick: () => window.location.reload()
+    },
+      el('i', { 'data-lucide': 'refresh-cw' }),
+      el('span', {}, lang === 'ja' ? '再読み込み' : 'Reload')
+    ));
   } else if (!isDriveAuthorized()) {
     const loginBtn = el('button', {
       className: 'sidebar-action-btn',

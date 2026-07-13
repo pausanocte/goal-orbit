@@ -1,5 +1,5 @@
 import { ORBIT_CONFIG } from '../config.js';
-import { getGoogleAccessToken } from './drive-api.js';
+import { getGoogleAccessToken } from './drive-api.js?v=20260714-3';
 import { setPremiumUnlocked } from '../store.js';
 
 const apiBaseUrl = ORBIT_CONFIG.premiumApiBaseUrl.replace(/\/$/, '');

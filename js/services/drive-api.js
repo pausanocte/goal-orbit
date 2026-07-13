@@ -10,6 +10,8 @@ const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapi
 const BACKUP_FILENAME = 'orbit-cloud-backup.json';
 const AUTH_SESSION_KEY = 'orbit_google_auth_session';
 const AUTO_LOGIN_KEY = 'orbit_google_auto_login';
+const INIT_RETRY_INTERVAL_MS = 500;
+const INIT_TIMEOUT_MS = 8000;
 
 let tokenClient;
 let gapiInited = false;
@@ -19,6 +21,10 @@ let currentFileId = null;
 let statusCallback = null;
 let currentUserInfo = null;
 let readyHandled = false;
+let initStarted = false;
+let initRetryTimer = null;
+let initTimeoutTimer = null;
+let gapiLoadRequested = false;
 
 function saveAuthSession(tokenResponse) {
   const expiresIn = Number(tokenResponse.expires_in || 3600);
@@ -91,14 +97,29 @@ export function getGoogleAccessToken() {
 
 export function initDriveApi(onStatusChange) {
   statusCallback = onStatusChange;
-  
-  // gapi script loaded?
+
+  if (initStarted) return;
+  initStarted = true;
+
+  initTimeoutTimer = setTimeout(() => {
+    if (!gapiInited || !gisInited) {
+      console.warn('Google APIs did not finish loading in time.');
+      updateStatus('error');
+    }
+  }, INIT_TIMEOUT_MS);
+
+  tryInitializeDriveApi();
+}
+
+function tryInitializeDriveApi() {
   if (typeof gapi !== 'undefined' && typeof google !== 'undefined') {
-    gapi.load('client', initializeGapiClient);
+    if (!gapiLoadRequested) {
+      gapiLoadRequested = true;
+      gapi.load('client', initializeGapiClient);
+    }
     initializeGisClient();
   } else {
-    // Wait and retry if scripts are not loaded yet
-    setTimeout(() => initDriveApi(onStatusChange), 500);
+    initRetryTimer = setTimeout(tryInitializeDriveApi, INIT_RETRY_INTERVAL_MS);
   }
 }
 
@@ -116,6 +137,7 @@ async function initializeGapiClient() {
 }
 
 function initializeGisClient() {
+  if (gisInited || !google?.accounts?.oauth2) return;
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
     scope: SCOPES,
@@ -135,6 +157,8 @@ function initializeGisClient() {
 async function checkIfReady() {
   if (!gapiInited || !gisInited || readyHandled) return;
   readyHandled = true;
+  clearTimeout(initRetryTimer);
+  clearTimeout(initTimeoutTimer);
 
   if (restoreAuthSession()) {
     await finishAuthorization();

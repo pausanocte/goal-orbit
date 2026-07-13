@@ -1,4 +1,4 @@
-import { getGoogleAccessToken } from './drive-api.js';
+import { getGoogleAccessToken } from './drive-api.js?v=20260714-3';
 import { formatRoutineFrequency } from '../utils.js';
 
 const CALENDAR_API = 'https://www.googleapis.com/calendar/v3';
