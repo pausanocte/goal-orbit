@@ -4,9 +4,10 @@
 
 import { el, clearElement, STATUS_CONFIG, PRIORITY_CONFIG, FREQUENCY_CONFIG, formatDate, formatRoutineFrequency, getDaysUntilDue, getSubtaskProgress, CATEGORY_CONFIG, normalizeDateInput, keyboardActivationAttrs } from '../utils.js';
 import { t } from '../i18n.js';
-import { getAreaById, getGoalsByAreaAndCategory, deleteGoal, archiveGoal, toggleSubtask, deleteArea, updateGoal, isRoutineCompletedOn, toggleRoutineCompletion } from '../store.js';
+import { getAreaById, getGoalsByAreaAndCategory, archiveGoal, toggleSubtask, updateGoal, isRoutineCompletedOn, toggleRoutineCompletion } from '../store.js';
 import { openGoalModal } from './goal-modal.js';
 import { openAreaModal } from './area-modal.js';
+import { confirmAndTrashArea, confirmAndTrashGoal } from './delete-actions.js';
 
 function requestCompletedDate(currentValue = '') {
   const input = prompt(t('common.completedDatePrompt'), currentValue ? formatDate(currentValue) : '');
@@ -97,9 +98,9 @@ export function renderAreaPage(container, areaId, onNavigate, onRefresh) {
       ),
       el('button', {
         className: 'btn btn-ghost btn-sm btn-danger',
-        onClick: () => {
-          if (confirm(t('area.confirmDeleteArea', area.name))) {
-            deleteArea(area.id);
+        onClick: async () => {
+          const deleted = await confirmAndTrashArea(area, onRefresh);
+          if (deleted) {
             onRefresh();
             onNavigate('dashboard');
           }
@@ -355,10 +356,7 @@ function createGoalCard(goal, area, index, onRefresh) {
     statusElement,
     el('div', { className: 'goal-card-actions' },
       createActionBtn('trash-2', t('common.delete'), () => {
-        if (confirm(t('area.confirmDelete', goal.title))) {
-          deleteGoal(goal.id);
-          onRefresh();
-        }
+        confirmAndTrashGoal(goal, onRefresh);
       })
     )
   );

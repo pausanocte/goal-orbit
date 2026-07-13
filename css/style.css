@@ -1594,6 +1594,27 @@ select.form-input option {
   height: 18px;
 }
 
+.toast-with-action {
+  align-items: center;
+  padding-right: 14px;
+}
+
+.toast-action-btn {
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.08);
+  color: var(--accent-resources);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 4px 10px;
+}
+
+.toast-action-btn:hover,
+.toast-action-btn:focus-visible {
+  background: rgba(16, 185, 129, 0.16);
+}
+
 /* === Empty State === */
 .empty-state {
   display: flex;

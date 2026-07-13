@@ -292,17 +292,15 @@ export function renderSidebar(container, currentPage, onNavigate) {
     onChange: async (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      if (!confirm(t('import.confirm'))) {
-        importInput.value = '';
-        return;
-      }
       try {
         await importData(file);
         showToast(t('import.success'));
         renderSidebar(container, currentPage, onNavigate);
         onNavigate(currentPage);
-      } catch {
-        alert(t('import.error'));
+      } catch (err) {
+        if (err?.message !== 'IMPORT_CANCELLED') {
+          alert(`${t('import.error')}\n\n${err?.message || ''}`);
+        }
       }
       importInput.value = '';
     }

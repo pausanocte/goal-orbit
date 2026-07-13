@@ -4,8 +4,9 @@
 
 import { el, clearElement, PRIORITY_CONFIG, FREQUENCY_CONFIG, formatDate, formatRoutineFrequency, getSubtaskProgress, keyboardActivationAttrs } from '../utils.js';
 import { t } from '../i18n.js';
-import { getArchivedGoals, unarchiveGoal, deleteGoal, getAllAreas, getAreaById, updateArea, deleteArea } from '../store.js';
+import { getArchivedGoals, unarchiveGoal, getAllAreas, getAreaById, updateArea, getDeletedAreas, getDeletedGoals, restoreArea, restoreGoal } from '../store.js';
 import { openGoalModal } from './goal-modal.js';
+import { confirmAndTrashArea, confirmAndTrashGoal } from './delete-actions.js';
 
 export function renderArchives(container, onRefresh) {
   clearElement(container);
@@ -50,6 +51,9 @@ export function renderArchives(container, onRefresh) {
   filterBar.appendChild(filterGroup);
   container.appendChild(filterBar);
 
+  const trashSection = el('div', { className: 'glass-card', style: 'margin-bottom: 16px;' });
+  container.appendChild(trashSection);
+
   // アーカイブリスト
   const archivedAreasSection = el('div', { className: 'glass-card', style: 'margin-bottom: 16px;' });
   container.appendChild(archivedAreasSection);
@@ -58,8 +62,11 @@ export function renderArchives(container, onRefresh) {
   container.appendChild(listContainer);
 
   function renderArchiveList() {
+    clearElement(trashSection);
     clearElement(archivedAreasSection);
     clearElement(listContainer);
+
+    renderTrashSection(trashSection, onRefresh);
 
     const archivedAreas = getAllAreas()
       .filter(area => area.archived)
@@ -116,6 +123,86 @@ export function renderArchives(container, onRefresh) {
   if (window.lucide) window.lucide.createIcons();
 }
 
+function renderTrashSection(container, onRefresh) {
+  const deletedAreas = getDeletedAreas().sort((a, b) => new Date(b.deletedAt || b.updatedAt) - new Date(a.deletedAt || a.updatedAt));
+  const deletedGoals = getDeletedGoals().sort((a, b) => new Date(b.deletedAt || b.updatedAt) - new Date(a.deletedAt || a.updatedAt));
+  const total = deletedAreas.length + deletedGoals.length;
+
+  container.appendChild(
+    el('div', { className: 'card-header-flex', style: 'margin-bottom: 12px;' },
+      el('h2', { className: 'card-title', style: 'margin-bottom: 0;' },
+        el('i', { 'data-lucide': 'trash-2' }),
+        el('span', {}, ' ゴミ箱')
+      ),
+      el('span', { className: 'status-badge', style: 'color: var(--text-secondary); border-color: var(--border-subtle);' }, `${total}`)
+    )
+  );
+
+  if (total === 0) {
+    container.appendChild(
+      el('div', { className: 'empty-state small' },
+        el('p', {}, 'ゴミ箱は空です')
+      )
+    );
+    return;
+  }
+
+  const grid = el('div', { className: 'goals-grid' });
+  deletedAreas.forEach(area => {
+    grid.appendChild(
+      el('div', {
+        className: 'goal-card archived-card',
+        style: `border-top: 3px solid ${area.color || '#6366F1'};`
+      },
+        el('div', { className: 'goal-card-header' },
+          el('div', { className: 'status-badge', style: `color: ${area.color || '#6366F1'}; border-color: ${area.color || '#6366F1'};` }, 'Area'),
+          el('button', {
+            type: 'button',
+            className: 'icon-btn',
+            title: '復元',
+            'aria-label': '復元',
+            onClick: () => {
+              restoreArea(area.id);
+              onRefresh();
+            }
+          }, el('i', { 'data-lucide': 'undo-2' }))
+        ),
+        el('h3', { className: 'goal-card-title' }, area.name),
+        el('p', { className: 'goal-card-desc' }, '30日後に完全削除されます')
+      )
+    );
+  });
+
+  deletedGoals.forEach(goal => {
+    const area = getAreaById(goal.areaId, true);
+    const areaColor = area ? area.color : '#6366F1';
+    grid.appendChild(
+      el('div', {
+        className: 'goal-card archived-card',
+        style: `border-top: 3px solid ${areaColor};`
+      },
+        el('div', { className: 'goal-card-header' },
+          el('div', { className: 'status-badge', style: `color: ${areaColor}; border-color: ${areaColor};` }, area ? area.name : t('common.unknown')),
+          el('button', {
+            type: 'button',
+            className: 'icon-btn',
+            title: '復元',
+            'aria-label': '復元',
+            onClick: () => {
+              restoreGoal(goal.id);
+              onRefresh();
+            }
+          }, el('i', { 'data-lucide': 'undo-2' }))
+        ),
+        el('h3', { className: 'goal-card-title' }, goal.title),
+        el('p', { className: 'goal-card-desc' }, '30日後に完全削除されます')
+      )
+    );
+  });
+
+  container.appendChild(grid);
+}
+
 function createArchivedAreaCard(area, index, onRefresh) {
   const card = el('div', {
     className: 'goal-card archived-card',
@@ -131,7 +218,7 @@ function createArchivedAreaCard(area, index, onRefresh) {
       el('button', {
         className: 'icon-btn',
         title: '復元',
-        onClick: () => {
+        onClick: async () => {
           updateArea(area.id, { completedDate: null });
           onRefresh();
         }
@@ -140,12 +227,9 @@ function createArchivedAreaCard(area, index, onRefresh) {
       ),
       el('button', {
         className: 'icon-btn',
-        title: '完全削除',
-        onClick: () => {
-          if (confirm(`「${area.name}」を完全に削除しますか？`)) {
-            deleteArea(area.id);
-            onRefresh();
-          }
+        title: 'ゴミ箱へ移動',
+        onClick: async () => {
+          await confirmAndTrashArea(area, onRefresh);
         }
       },
         el('i', { 'data-lucide': 'trash-2' })
@@ -212,14 +296,11 @@ function createArchiveCard(goal, index, onRefresh) {
       ),
       el('button', {
         className: 'icon-btn',
-        title: t('archives.permanentDelete'),
-        'aria-label': t('archives.permanentDelete'),
-        onClick: (e) => {
+        title: t('common.delete'),
+        'aria-label': t('common.delete'),
+        onClick: async (e) => {
           e.stopPropagation();
-          if (confirm(t('archives.confirmDelete', goal.title))) {
-            deleteGoal(goal.id);
-            onRefresh();
-          }
+          await confirmAndTrashGoal(goal, onRefresh);
         }
       },
         el('i', { 'data-lucide': 'trash-2' })

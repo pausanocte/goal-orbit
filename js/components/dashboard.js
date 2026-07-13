@@ -4,9 +4,10 @@
 
 import { el, clearElement, STATUS_CONFIG, PRIORITY_CONFIG, formatDate, formatRoutineFrequency, getSubtaskProgress, normalizeDateInput, keyboardActivationAttrs } from '../utils.js';
 import { t } from '../i18n.js';
-import { getStats, getDueSoonGoals, getActiveAreas, getAreaById, getActiveGoals, getAllGoals, updateGoal, toggleSubtask, getDashboardLayout, saveDashboardLayout, deleteGoal, isRoutineCompletedOn, toggleRoutineCompletion } from '../store.js';
+import { getStats, getDueSoonGoals, getActiveAreas, getAreaById, getActiveGoals, getAllGoals, updateGoal, toggleSubtask, getDashboardLayout, saveDashboardLayout, isRoutineCompletedOn, toggleRoutineCompletion } from '../store.js';
 import { openGoalModal } from './goal-modal.js';
 import { openAreaModal } from './area-modal.js';
+import { confirmAndTrashGoal } from './delete-actions.js';
 
 const DASHBOARD_SETTINGS_KEY = 'orbit_dashboard_settings';
 
@@ -37,12 +38,9 @@ function createDeleteGoalButton(goal, onDeleted) {
     className: 'btn btn-ghost btn-sm dashboard-delete-goal-btn',
     title: t('common.delete'),
     'aria-label': t('common.delete'),
-    onClick: (e) => {
+    onClick: async (e) => {
       e.stopPropagation();
-      if (confirm(t('area.confirmDelete', goal.title))) {
-        deleteGoal(goal.id);
-        onDeleted();
-      }
+      await confirmAndTrashGoal(goal, onDeleted);
     }
   },
     el('i', { 'data-lucide': 'trash-2', style: 'width: 14px; height: 14px;' })

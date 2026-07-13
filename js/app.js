@@ -9,7 +9,7 @@ import { renderAreaPage } from './components/area-page.js';
 import { renderMonthlyReview, flushMonthlyReviewAutosave } from './components/monthly-review.js';
 import { renderArchives } from './components/archives.js';
 import { openSyncConflictModal } from './components/sync-conflict-modal.js';
-import { migrateIfNeeded, getFullData, restoreFullData, getLastModified, initializeSampleDataIfNeeded, hasLocalUserChanges, markDataSynced, saveRecoveryBackup, setPremiumUnlocked } from './store.js';
+import { migrateIfNeeded, getFullData, restoreFullData, getLastModified, initializeSampleDataIfNeeded, hasLocalUserChanges, markDataSynced, saveRecoveryBackup, setPremiumUnlocked, purgeExpiredTrash } from './store.js';
 import { initDriveApi, isDriveAuthorized, downloadBackup, uploadBackup, findExistingBackupFile } from './services/drive-api.js';
 import { refreshPremiumEntitlement } from './services/premium-api.js';
 import { setRetryDriveSyncHandler, setSyncStatus } from './sync-state.js';
@@ -249,6 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setPremiumUnlocked(false);
   setRetryDriveSyncHandler(retryDriveSync);
   migrateIfNeeded(); // v2からのマイグレーション
+  purgeExpiredTrash();
   initializeSampleDataIfNeeded(); // サンプルデータの投入
   initDriveApi(handleDriveStatusChange);
 

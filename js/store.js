@@ -14,6 +14,12 @@ const LOCAL_USER_CHANGES_KEY = 'orbit_local_user_changes';
 const RECOVERY_BACKUP_KEY = 'orbit_recovery_backup';
 const FREE_ITEM_LIMIT = 4;
 const PREMIUM_UNLOCK_KEY = 'orbit_premium_unlocked';
+const DATA_VERSION = '3.1';
+const MAX_IMPORT_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_IMPORT_AREAS = 1000;
+const MAX_IMPORT_GOALS = 5000;
+const MAX_IMPORT_REVIEWS = 1000;
+const TRASH_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 
 const DEFAULT_DASHBOARD_LAYOUT = ['areas', 'routines', 'projects', 'due_soon', 'stale', 'status', 'priority', 'recent'];
 
@@ -49,6 +55,23 @@ export function markDataSynced(expectedModified = null) {
   if (expectedModified !== null && getLastModified() !== expectedModified) return false;
   localStorage.setItem(LOCAL_USER_CHANGES_KEY, 'false');
   return true;
+}
+
+function isExpiredTrashItem(item, now = Date.now()) {
+  if (!item?.deletedAt) return false;
+  const deletedAt = Date.parse(item.deletedAt);
+  return Number.isFinite(deletedAt) && now - deletedAt >= TRASH_RETENTION_MS;
+}
+
+export function purgeExpiredTrash() {
+  const now = Date.now();
+  const areas = loadData(AREAS_KEY);
+  const goals = loadData(GOALS_KEY);
+  const nextAreas = areas.filter(area => !isExpiredTrashItem(area, now));
+  const nextGoals = goals.filter(goal => !isExpiredTrashItem(goal, now));
+
+  if (nextAreas.length !== areas.length) saveData(AREAS_KEY, nextAreas);
+  if (nextGoals.length !== goals.length) saveData(GOALS_KEY, nextGoals);
 }
 
 export function saveRecoveryBackup(data) {
@@ -174,16 +197,22 @@ export function migrateIfNeeded() {
 
 // ===== Areas =====
 
-export function getAllAreas() {
-  return loadData(AREAS_KEY).sort((a, b) => (a.order || 0) - (b.order || 0));
+export function getAllAreas(includeDeleted = false) {
+  return loadData(AREAS_KEY)
+    .filter(area => includeDeleted || !area.deletedAt)
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
 }
 
 export function getActiveAreas() {
   return getAllAreas().filter(a => !a.archived);
 }
 
-export function getAreaById(id) {
-  return getAllAreas().find(a => a.id === id) || null;
+export function getDeletedAreas() {
+  return getAllAreas(true).filter(area => area.deletedAt);
+}
+
+export function getAreaById(id, includeDeleted = false) {
+  return getAllAreas(includeDeleted).find(a => a.id === id) || null;
 }
 
 export function addArea({ name, description = '', color, icon, startDate = null, completedDate = null }) {
@@ -212,7 +241,7 @@ export function addArea({ name, description = '', color, icon, startDate = null,
 }
 
 export function updateArea(id, updates) {
-  const areas = getAllAreas();
+  const areas = getAllAreas(true);
   const idx = areas.findIndex(a => a.id === id);
   if (idx === -1) return null;
   const currentArea = areas[idx];
@@ -225,16 +254,79 @@ export function updateArea(id, updates) {
   return areas[idx];
 }
 
-export function deleteArea(id) {
-  saveData(AREAS_KEY, getAllAreas().filter(a => a.id !== id));
-  // Delete all goals in this area
-  saveData(GOALS_KEY, getAllGoals().filter(g => g.areaId !== id));
+export function deleteArea(id, options = {}) {
+  const deletedAt = new Date().toISOString();
+  const calendarDeletedGoalIds = new Set(options.calendarDeletedGoalIds || []);
+  const areas = getAllAreas(true);
+  const areaIndex = areas.findIndex(a => a.id === id);
+  if (areaIndex === -1) return null;
+
+  areas[areaIndex] = {
+    ...areas[areaIndex],
+    deletedAt,
+    deletedPreviousArchived: areas[areaIndex].archived,
+    archived: true,
+    updatedAt: deletedAt
+  };
+
+  const goals = getAllGoals(true).map(goal => {
+    if (goal.areaId !== id || goal.deletedAt) return goal;
+    return {
+      ...goal,
+      deletedAt,
+      deletedByAreaId: id,
+      deletedPreviousArchived: goal.archived,
+      deletedPreviousStatus: goal.status,
+      archived: true,
+      googleCalendarEventId: calendarDeletedGoalIds.has(goal.id) ? null : goal.googleCalendarEventId,
+      googleCalendarEventLink: calendarDeletedGoalIds.has(goal.id) ? null : goal.googleCalendarEventLink,
+      googleCalendarRequested: calendarDeletedGoalIds.has(goal.id) ? false : goal.googleCalendarRequested,
+      updatedAt: deletedAt
+    };
+  });
+
+  saveData(AREAS_KEY, areas);
+  saveData(GOALS_KEY, goals);
+  return areas[areaIndex];
+}
+
+export function restoreArea(id) {
+  const areas = getAllAreas(true);
+  const areaIndex = areas.findIndex(a => a.id === id);
+  if (areaIndex === -1) return null;
+  const restoredAt = new Date().toISOString();
+
+  areas[areaIndex] = {
+    ...areas[areaIndex],
+    deletedAt: null,
+    archived: areas[areaIndex].deletedPreviousArchived ?? false,
+    deletedPreviousArchived: undefined,
+    updatedAt: restoredAt
+  };
+
+  const goals = getAllGoals(true).map(goal => {
+    if (goal.deletedByAreaId !== id) return goal;
+    return {
+      ...goal,
+      deletedAt: null,
+      deletedByAreaId: null,
+      archived: goal.deletedPreviousArchived ?? false,
+      status: goal.deletedPreviousStatus || goal.status,
+      deletedPreviousArchived: undefined,
+      deletedPreviousStatus: undefined,
+      updatedAt: restoredAt
+    };
+  });
+
+  saveData(AREAS_KEY, areas);
+  saveData(GOALS_KEY, goals);
+  return areas[areaIndex];
 }
 
 // ===== Goals =====
 
-export function getAllGoals() {
-  return loadData(GOALS_KEY);
+export function getAllGoals(includeDeleted = false) {
+  return loadData(GOALS_KEY).filter(goal => includeDeleted || !goal.deletedAt);
 }
 
 export function getGoalsByAreaAndCategory(areaId, category, includeArchived = false) {
@@ -255,6 +347,10 @@ export function getActiveGoals() {
 
 export function getArchivedGoals() {
   return getAllGoals().filter(g => g.archived);
+}
+
+export function getDeletedGoals() {
+  return getAllGoals(true).filter(goal => goal.deletedAt);
 }
 
 export function getGoalById(id) {
@@ -302,7 +398,7 @@ export function addGoal({ title, description, areaId, category, status = 'active
   if (!canAddGoal(category)) {
     throw new Error(`FREE_LIMIT_${category.toUpperCase()}_REACHED`);
   }
-  const goals = getAllGoals();
+  const goals = getAllGoals(true);
   const now = new Date().toISOString();
   if (completedDate && category !== 'routines') {
     status = 'completed';
@@ -335,7 +431,7 @@ export function addGoal({ title, description, areaId, category, status = 'active
 }
 
 export function updateGoal(id, updates) {
-  const goals = getAllGoals();
+  const goals = getAllGoals(true);
   const idx = goals.findIndex(g => g.id === id);
   if (idx === -1) return null;
   const currentGoal = goals[idx];
@@ -369,8 +465,43 @@ export function updateGoal(id, updates) {
   return goals[idx];
 }
 
-export function deleteGoal(id) {
-  saveData(GOALS_KEY, getAllGoals().filter(g => g.id !== id));
+export function deleteGoal(id, options = {}) {
+  const goals = getAllGoals(true);
+  const idx = goals.findIndex(g => g.id === id);
+  if (idx === -1) return null;
+  const deletedAt = new Date().toISOString();
+  const calendarDeleted = !!options.calendarDeleted;
+  goals[idx] = {
+    ...goals[idx],
+    deletedAt,
+    deletedPreviousArchived: goals[idx].archived,
+    deletedPreviousStatus: goals[idx].status,
+    archived: true,
+    googleCalendarEventId: calendarDeleted ? null : goals[idx].googleCalendarEventId,
+    googleCalendarEventLink: calendarDeleted ? null : goals[idx].googleCalendarEventLink,
+    googleCalendarRequested: calendarDeleted ? false : goals[idx].googleCalendarRequested,
+    updatedAt: deletedAt
+  };
+  saveData(GOALS_KEY, goals);
+  return goals[idx];
+}
+
+export function restoreGoal(id) {
+  const goals = getAllGoals(true);
+  const idx = goals.findIndex(g => g.id === id);
+  if (idx === -1) return null;
+  goals[idx] = {
+    ...goals[idx],
+    deletedAt: null,
+    deletedByAreaId: null,
+    archived: goals[idx].deletedPreviousArchived ?? false,
+    status: goals[idx].deletedPreviousStatus || goals[idx].status,
+    deletedPreviousArchived: undefined,
+    deletedPreviousStatus: undefined,
+    updatedAt: new Date().toISOString()
+  };
+  saveData(GOALS_KEY, goals);
+  return goals[idx];
 }
 
 export function archiveGoal(id) {
@@ -508,10 +639,10 @@ export function getDueSoonGoals(withinDays = 3) {
 
 export function exportData() {
   const data = {
-    version: '3.0',
+    version: DATA_VERSION,
     exportedAt: new Date().toISOString(),
-    areas: getAllAreas(),
-    goals: getAllGoals(),
+    areas: getAllAreas(true),
+    goals: getAllGoals(true),
     reviews: getAllReviews(),
     language: localStorage.getItem('orbit_language') || 'ja',
     dashboardLayout: getDashboardLayout()
@@ -527,14 +658,124 @@ export function exportData() {
   URL.revokeObjectURL(url);
 }
 
+function isPlainObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function validateRecordArray(name, value, maxItems, requiredFields = []) {
+  if (!Array.isArray(value)) return [`${name} must be an array.`];
+  if (value.length > maxItems) return [`${name} has too many items.`];
+  const errors = [];
+  value.forEach((item, index) => {
+    if (!isPlainObject(item)) {
+      errors.push(`${name}[${index}] must be an object.`);
+      return;
+    }
+    requiredFields.forEach(field => {
+      if (typeof item[field] !== 'string' || !item[field].trim()) {
+        errors.push(`${name}[${index}].${field} is required.`);
+      }
+    });
+  });
+  return errors;
+}
+
+function validateImportData(data) {
+  if (!isPlainObject(data)) {
+    return { valid: false, errors: ['Backup must be a JSON object.'] };
+  }
+
+  const version = String(data.version || '');
+  const allowedVersions = new Set(['3.0', DATA_VERSION]);
+  const errors = [];
+
+  if (!allowedVersions.has(version)) {
+    errors.push(`Unsupported backup version: ${version || 'missing'}.`);
+  }
+
+  const areas = data.areas ?? [];
+  const goals = data.goals ?? [];
+  const reviews = data.reviews ?? [];
+
+  errors.push(...validateRecordArray('areas', areas, MAX_IMPORT_AREAS, ['id', 'name']));
+  errors.push(...validateRecordArray('goals', goals, MAX_IMPORT_GOALS, ['id', 'title', 'areaId', 'category']));
+  errors.push(...validateRecordArray('reviews', reviews, MAX_IMPORT_REVIEWS, ['id']));
+
+  goals.forEach((goal, index) => {
+    if (!['routines', 'projects', 'resources'].includes(goal.category)) {
+      errors.push(`goals[${index}].category is invalid.`);
+    }
+  });
+
+  if (data.dashboardLayout !== undefined && !Array.isArray(data.dashboardLayout)) {
+    errors.push('dashboardLayout must be an array.');
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    normalized: {
+      ...data,
+      areas,
+      goals,
+      reviews,
+      version: DATA_VERSION
+    },
+    summary: {
+      areas: areas.length,
+      goals: goals.length,
+      reviews: reviews.length
+    }
+  };
+}
+
+function confirmImportPreview(summary) {
+  const isJapanese = (localStorage.getItem('orbit_language') || 'ja') === 'ja';
+  const message = isJapanese
+    ? [
+        'インポート内容の確認',
+        `Area: ${summary.areas}件`,
+        `目標: ${summary.goals}件`,
+        `振り返り: ${summary.reviews}件`,
+        '',
+        '読み込み前に現在のデータを自動バックアップします。',
+        'この内容で読み込みますか？'
+      ].join('\n')
+    : [
+        'Import preview',
+        `Areas: ${summary.areas}`,
+        `Goals: ${summary.goals}`,
+        `Reviews: ${summary.reviews}`,
+        '',
+        'A recovery backup of the current data will be saved before importing.',
+        'Continue?'
+      ].join('\n');
+  return confirm(message);
+}
+
 export function importData(file) {
   return new Promise((resolve, reject) => {
+    if (file.size > MAX_IMPORT_FILE_SIZE_BYTES) {
+      reject(new Error('Import file is too large.'));
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target.result);
-        restoreFullData(data);
-        resolve(data);
+        const validation = validateImportData(data);
+        if (!validation.valid) {
+          reject(new Error(validation.errors.join('\n')));
+          return;
+        }
+        if (!confirmImportPreview(validation.summary)) {
+          reject(new Error('IMPORT_CANCELLED'));
+          return;
+        }
+        saveRecoveryBackup(getFullData());
+        restoreFullData(validation.normalized);
+        resolve(validation.normalized);
       } catch (err) { reject(err); }
     };
     reader.onerror = () => reject(new Error('File read error'));
@@ -544,11 +785,11 @@ export function importData(file) {
 
 export function getFullData() {
   return {
-    version: '3.1',
+    version: DATA_VERSION,
     exportedAt: new Date().toISOString(),
     lastModified: getLastModified(),
-    areas: getAllAreas(),
-    goals: getAllGoals(),
+    areas: getAllAreas(true),
+    goals: getAllGoals(true),
     reviews: getAllReviews(),
     language: localStorage.getItem('orbit_language') || 'ja',
     dashboardLayout: getDashboardLayout()
@@ -566,7 +807,7 @@ export function restoreFullData(data) {
   } else {
     localStorage.setItem(LAST_MODIFIED_KEY, Date.now().toString());
   }
-  localStorage.setItem(VERSION_KEY, '3.1');
+  localStorage.setItem(VERSION_KEY, DATA_VERSION);
   localStorage.setItem(LOCAL_USER_CHANGES_KEY, 'false');
 }
 

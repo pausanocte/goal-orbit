@@ -11,6 +11,67 @@ import { canCreateCalendarEvent, deleteGoalCalendarEvent, getCalendarValidationE
 let modalOverlay = null;
 let removeEscapeClose = null;
 
+function textOr(key, fallback, ...args) {
+  const value = t(key, ...args);
+  if (value && value !== key) return value;
+  return fallback.replace(/\{(\d+)\}/g, (_, index) => args[Number(index)] ?? '');
+}
+
+function showCalendarRetryNotice(form, goalId, onSave, errorMessage = '') {
+  form.querySelector('.calendar-retry-notice')?.remove();
+  const buttons = form.querySelector('.modal-buttons');
+  const notice = el('div', {
+    className: 'calendar-retry-notice glass-card',
+    style: 'padding: 12px; border: 1px solid rgba(245, 158, 11, 0.35); background: rgba(245, 158, 11, 0.08); color: var(--text-secondary); font-size: 0.82rem; display: flex; flex-direction: column; gap: 10px;'
+  },
+    el('strong', { style: 'color: var(--text-primary);' }, textOr(
+      'calendar.goalSavedButSyncFailed',
+      '目標は保存しましたが、Googleカレンダー連携のみ失敗しました。'
+    )),
+    errorMessage ? el('small', { style: 'white-space: pre-wrap;' }, errorMessage) : null,
+    el('button', {
+      type: 'button',
+      className: 'btn btn-ghost btn-sm',
+      onClick: async (event) => {
+        event.preventDefault();
+        const retryButton = event.currentTarget;
+        const latestGoal = getGoalById(goalId);
+        if (!latestGoal) return;
+        if (!canCreateCalendarEvent(latestGoal)) {
+          alert(t(getCalendarValidationErrorKey(latestGoal)));
+          return;
+        }
+        retryButton.disabled = true;
+        try {
+          const eventData = await upsertGoalCalendarEvent(latestGoal);
+          updateGoal(latestGoal.id, {
+            googleCalendarEventId: eventData.id || latestGoal.googleCalendarEventId || null,
+            googleCalendarEventLink: eventData.htmlLink || latestGoal.googleCalendarEventLink || null,
+            googleCalendarRequested: false,
+            googleCalendarSyncErrorAt: null,
+            googleCalendarSyncErrorMessage: null
+          });
+          closeGoalModal();
+          onSave?.();
+        } catch (err) {
+          console.error('Calendar retry failed', err);
+          retryButton.disabled = false;
+          alert(`${t('calendar.addFailed')}\n\n${err.message || ''}`);
+        }
+      }
+    },
+      el('i', { 'data-lucide': 'refresh-cw' }),
+      el('span', {}, textOr('calendar.retrySync', 'Googleカレンダー連携を再試行'))
+    )
+  );
+  if (buttons) {
+    form.insertBefore(notice, buttons);
+  } else {
+    form.appendChild(notice);
+  }
+  if (window.lucide) window.lucide.createIcons();
+}
+
 function createGoalReviewHistory(goal) {
   const reviews = getReviewsByGoalId(goal.id);
   const section = el('div', { className: 'form-field goal-review-history' },
@@ -553,7 +614,7 @@ export function openGoalModal(goalId, defaultArea = null, onSave = null) {
     type: 'checkbox',
     name: 'addToCalendar',
     id: 'goal-add-to-calendar',
-    checked: goal?.googleCalendarEventId ? 'checked' : undefined
+    checked: (goal?.googleCalendarEventId || goal?.googleCalendarRequested) ? 'checked' : undefined
   });
   form.appendChild(
     el('label', {
@@ -576,6 +637,10 @@ export function openGoalModal(goalId, defaultArea = null, onSave = null) {
     }}, isEdit ? t('modal.update') : t('modal.add'))
   );
   form.appendChild(buttons);
+
+  if (isEdit && goal?.googleCalendarSyncErrorAt) {
+    showCalendarRetryNotice(form, goal.id, onSave, goal.googleCalendarSyncErrorMessage || '');
+  }
 
   modal.appendChild(form);
   modalOverlay.appendChild(modal);
@@ -616,6 +681,9 @@ async function handleSubmit(form, isEdit, goalId, onSave, pickers = {}) {
     category: form.category.value,
     status: form.status.value,
     priority: form.priority.value,
+    googleCalendarRequested: addToCalendar,
+    googleCalendarSyncErrorAt: null,
+    googleCalendarSyncErrorMessage: null,
   };
 
   if (!data.title || !data.areaId) return;
@@ -683,6 +751,7 @@ async function handleSubmit(form, isEdit, goalId, onSave, pickers = {}) {
       await deleteGoalCalendarEvent(existingGoal);
       data.googleCalendarEventId = null;
       data.googleCalendarEventLink = null;
+      data.googleCalendarRequested = false;
     } catch (err) {
       console.error('Calendar delete failed', err);
       const deleteFailedMessage = t('calendar.deleteFailed');
@@ -716,11 +785,21 @@ async function handleSubmit(form, isEdit, goalId, onSave, pickers = {}) {
       const event = await upsertGoalCalendarEvent(savedGoal);
       updateGoal(savedGoal.id, {
         googleCalendarEventId: event.id || savedGoal.googleCalendarEventId || null,
-        googleCalendarEventLink: event.htmlLink || savedGoal.googleCalendarEventLink || null
+        googleCalendarEventLink: event.htmlLink || savedGoal.googleCalendarEventLink || null,
+        googleCalendarRequested: false,
+        googleCalendarSyncErrorAt: null,
+        googleCalendarSyncErrorMessage: null
       });
     } catch (err) {
       console.error('Calendar sync failed', err);
-      alert(`${t('calendar.addFailed')}\n\n${err.message || ''}`);
+      updateGoal(savedGoal.id, {
+        googleCalendarRequested: true,
+        googleCalendarSyncErrorAt: new Date().toISOString(),
+        googleCalendarSyncErrorMessage: err.message || ''
+      });
+      alert(`${textOr('calendar.goalSavedButSyncFailed', '目標は保存しましたが、Googleカレンダー連携のみ失敗しました。')}\n\n${t('calendar.addFailed')}\n\n${err.message || ''}`);
+      showCalendarRetryNotice(form, savedGoal.id, onSave, err.message || '');
+      return;
     }
   }
 
