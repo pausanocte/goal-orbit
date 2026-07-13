@@ -7,6 +7,7 @@ import { ORBIT_CONFIG } from '../config.js';
 const CLIENT_ID = ORBIT_CONFIG.googleClientId;
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/calendar.events email profile';
+const REQUIRED_SCOPES = SCOPES.split(' ');
 const BACKUP_FILENAME = 'orbit-cloud-backup.json';
 const AUTH_SESSION_KEY = 'orbit_google_auth_session';
 const AUTO_LOGIN_KEY = 'orbit_google_auto_login';
@@ -20,6 +21,7 @@ let isAuthorized = false;
 let currentFileId = null;
 let statusCallback = null;
 let currentUserInfo = null;
+let currentScope = '';
 let readyHandled = false;
 let initStarted = false;
 let initRetryTimer = null;
@@ -28,14 +30,20 @@ let gapiLoadRequested = false;
 
 function saveAuthSession(tokenResponse) {
   const expiresIn = Number(tokenResponse.expires_in || 3600);
+  currentScope = tokenResponse.scope || SCOPES;
   const session = {
     access_token: tokenResponse.access_token,
     token_type: tokenResponse.token_type || 'Bearer',
-    scope: tokenResponse.scope || SCOPES,
+    scope: currentScope,
     expires_at: Date.now() + (expiresIn * 1000)
   };
   sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session));
   localStorage.setItem(AUTO_LOGIN_KEY, 'true');
+}
+
+function hasRequiredScopes(scopeValue) {
+  const granted = new Set(String(scopeValue || '').split(/\s+/).filter(Boolean));
+  return REQUIRED_SCOPES.every(scope => granted.has(scope));
 }
 
 function restoreAuthSession() {
@@ -44,12 +52,13 @@ function restoreAuthSession() {
     if (!raw) return false;
 
     const session = JSON.parse(raw);
-    if (!session.access_token || session.expires_at <= Date.now() + 60000) {
+    if (!session.access_token || session.expires_at <= Date.now() + 60000 || !hasRequiredScopes(session.scope)) {
       sessionStorage.removeItem(AUTH_SESSION_KEY);
       return false;
     }
 
     gapi.client.setToken({ access_token: session.access_token });
+    currentScope = session.scope || '';
     isAuthorized = true;
     return true;
   } catch {
@@ -60,6 +69,13 @@ function restoreAuthSession() {
 
 async function finishAuthorization(tokenResponse = null) {
   if (tokenResponse) {
+    if (!hasRequiredScopes(tokenResponse.scope || SCOPES)) {
+      sessionStorage.removeItem(AUTH_SESSION_KEY);
+      isAuthorized = false;
+      currentScope = '';
+      updateStatus('ready');
+      return;
+    }
     gapi.client.setToken(tokenResponse);
     saveAuthSession(tokenResponse);
   }
@@ -92,7 +108,7 @@ export function getUserInfo() {
 }
 
 export function getGoogleAccessToken() {
-  return isAuthorized ? gapi.client.getToken()?.access_token || null : null;
+  return isAuthorized && hasRequiredScopes(currentScope) ? gapi.client.getToken()?.access_token || null : null;
 }
 
 export function initDriveApi(onStatusChange) {
@@ -141,6 +157,7 @@ function initializeGisClient() {
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
     scope: SCOPES,
+    include_granted_scopes: true,
     callback: async (resp) => {
       if (resp.error !== undefined) {
         updateStatus('ready');
@@ -179,7 +196,7 @@ function updateStatus(status) {
 }
 
 export function handleAuthClick() {
-  if (gapi.client.getToken() === null) {
+  if (gapi.client.getToken() === null || !hasRequiredScopes(currentScope)) {
     tokenClient.requestAccessToken({prompt: 'consent'});
   } else {
     tokenClient.requestAccessToken({prompt: ''});
@@ -194,6 +211,7 @@ export function handleSignoutClick() {
     isAuthorized = false;
     currentFileId = null;
     currentUserInfo = null;
+    currentScope = '';
     sessionStorage.removeItem(AUTH_SESSION_KEY);
     localStorage.removeItem(AUTO_LOGIN_KEY);
     updateStatus('ready');

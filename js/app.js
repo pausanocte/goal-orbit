@@ -2,7 +2,7 @@
 // Orbit v3 - アプリ初期化・ルーティング
 // ==========================================
 
-import { renderSidebar } from './components/sidebar.js?v=20260714-3';
+import { renderSidebar } from './components/sidebar.js?v=20260714-4';
 import { renderDashboard } from './components/dashboard.js';
 import { renderTodayPage } from './components/today-page.js';
 import { renderAreaPage } from './components/area-page.js';
@@ -10,8 +10,8 @@ import { renderMonthlyReview, flushMonthlyReviewAutosave } from './components/mo
 import { renderArchives } from './components/archives.js';
 import { openSyncConflictModal } from './components/sync-conflict-modal.js';
 import { migrateIfNeeded, getFullData, restoreFullData, getLastModified, initializeSampleDataIfNeeded, hasLocalUserChanges, markDataSynced, saveRecoveryBackup, setPremiumUnlocked } from './store.js';
-import { initDriveApi, isDriveAuthorized, downloadBackup, uploadBackup, findExistingBackupFile } from './services/drive-api.js?v=20260714-3';
-import { refreshPremiumEntitlement } from './services/premium-api.js?v=20260714-3';
+import { initDriveApi, isDriveAuthorized, downloadBackup, uploadBackup, findExistingBackupFile } from './services/drive-api.js?v=20260714-4';
+import { refreshPremiumEntitlement } from './services/premium-api.js?v=20260714-4';
 
 export const appState = { syncStatus: 'init' };
 let syncDebounceTimer = null;
