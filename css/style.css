@@ -1254,6 +1254,53 @@ input[type="date"].form-input {
   letter-spacing: 0.08em;
 }
 
+.date-picker-field {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 40px;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-picker-text-input {
+  min-width: 0;
+}
+
+.date-picker-calendar-btn {
+  width: 40px;
+  height: 44px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.date-picker-calendar-btn:hover {
+  border-color: var(--border-light);
+  color: var(--text-primary);
+  background: var(--surface-glass-hover);
+}
+
+.date-picker-calendar-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.native-date-input-hidden {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
 select.form-input {
   cursor: pointer;
   appearance: none;
@@ -2444,7 +2491,24 @@ select.form-input option {
   transition: all var(--transition-fast);
 }
 
+.inline-date-picker {
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: 104px 26px;
+  align-items: center;
+  gap: 4px;
+  justify-self: start;
+}
+
+.inline-date-picker .inline-edit-date {
+  width: 104px;
+}
+
 .dashboard-compact-item .inline-edit-date {
+  justify-self: start;
+}
+
+.dashboard-compact-item .inline-date-picker {
   justify-self: start;
 }
 
@@ -2453,11 +2517,30 @@ select.form-input option {
   background: rgba(255, 255, 255, 0.02) !important;
 }
 
-.inline-edit-date::-webkit-calendar-picker-indicator {
+.inline-date-picker-btn {
+  width: 26px;
+  height: 24px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-tertiary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  opacity: 0.6;
-  filter: invert(1);
-  margin-left: 2px;
+  padding: 0;
+  transition: all var(--transition-fast);
+}
+
+.inline-date-picker-btn:hover {
+  border-color: var(--border-light);
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.inline-date-picker-btn svg {
+  width: 13px;
+  height: 13px;
 }
 
 /* === Layout Segment Control (Capsule View Toggle) === */

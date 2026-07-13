@@ -62,6 +62,20 @@ function getStaleGoals(goals) {
 }
 
 function createInlineDateEditor(goal, field, onSaved, options = {}) {
+  const nativeInput = el('input', {
+    type: 'date',
+    className: 'native-date-input-hidden',
+    value: goal[field] || '',
+    tabindex: '-1',
+    'aria-hidden': 'true',
+    onChange: (e) => {
+      e.stopPropagation();
+      updateGoal(goal.id, { [field]: e.target.value || null });
+      onSaved();
+    },
+    onClick: (e) => e.stopPropagation()
+  });
+
   const input = el('input', {
     type: 'text',
     value: goal[field] ? formatDate(goal[field]) : '',
@@ -75,12 +89,31 @@ function createInlineDateEditor(goal, field, onSaved, options = {}) {
         e.target.value = goal[field] ? formatDate(goal[field]) : '';
         return;
       }
+      nativeInput.value = normalized || '';
       updateGoal(goal.id, { [field]: normalized });
       onSaved();
     },
     onClick: (e) => e.stopPropagation()
   });
-  return input;
+
+  const calendarBtn = el('button', {
+    type: 'button',
+    className: 'inline-date-picker-btn',
+    title: t('common.selectDate'),
+    onClick: (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      nativeInput.value = normalizeDateInput(input.value) || '';
+      if (typeof nativeInput.showPicker === 'function') {
+        nativeInput.showPicker();
+      } else {
+        nativeInput.focus();
+        nativeInput.click();
+      }
+    }
+  }, el('i', { 'data-lucide': 'calendar-days' }));
+
+  return el('div', { className: 'inline-date-picker' }, input, calendarBtn, nativeInput);
 }
 
 function loadDashboardSettings() {

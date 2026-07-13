@@ -157,9 +157,16 @@ export function registerEscapeClose(closeHandler) {
 
 export function createDatePicker(initialValue, onChange) {
   const compactValue = initialValue ? initialValue.replaceAll('-', '') : '';
+  const nativeInput = el('input', {
+    type: 'date',
+    className: 'native-date-input-hidden',
+    value: initialValue || '',
+    tabindex: '-1',
+    'aria-hidden': 'true'
+  });
   const input = el('input', {
     type: 'text',
-    className: 'form-input form-date-input',
+    className: 'form-input form-date-input date-picker-text-input',
     value: formatCompactDateDisplay(compactValue),
     maxLength: '10',
     inputMode: 'numeric',
@@ -169,6 +176,7 @@ export function createDatePicker(initialValue, onChange) {
       const sanitized = event.target.value.replace(/\D/g, '').slice(0, 8);
       event.target.value = formatCompactDateDisplay(sanitized);
       const parsed = parseCompactDate(sanitized);
+      nativeInput.value = parsed || '';
       event.target.setCustomValidity(sanitized && !parsed ? t('common.dateInputHelp') : '');
       onChange?.(parsed);
     },
@@ -179,6 +187,30 @@ export function createDatePicker(initialValue, onChange) {
     }
   });
 
-  input.getValue = () => parseCompactDate(input.value);
-  return input;
+  nativeInput.addEventListener('change', () => {
+    input.value = nativeInput.value ? formatDate(nativeInput.value) : '';
+    input.setCustomValidity('');
+    onChange?.(nativeInput.value || null);
+  });
+
+  const calendarBtn = el('button', {
+    type: 'button',
+    className: 'date-picker-calendar-btn',
+    title: t('common.selectDate'),
+    onClick: (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      nativeInput.value = parseCompactDate(input.value) || '';
+      if (typeof nativeInput.showPicker === 'function') {
+        nativeInput.showPicker();
+      } else {
+        nativeInput.focus();
+        nativeInput.click();
+      }
+    }
+  }, el('i', { 'data-lucide': 'calendar-days' }));
+
+  const wrapper = el('div', { className: 'date-picker-field' }, input, calendarBtn, nativeInput);
+  wrapper.getValue = () => parseCompactDate(input.value);
+  return wrapper;
 }
