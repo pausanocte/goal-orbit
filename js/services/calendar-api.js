@@ -1,4 +1,4 @@
-import { getGoogleAccessToken } from './drive-api.js?v=20260714-4';
+import { getGoogleAccessToken } from './drive-api.js?v=20260714-5';
 import { formatRoutineFrequency } from '../utils.js';
 
 const CALENDAR_API = 'https://www.googleapis.com/calendar/v3';
@@ -27,14 +27,8 @@ function toDateValue(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
-function toDateTimeValue(date) {
-  const offsetMinutes = -date.getTimezoneOffset();
-  const sign = offsetMinutes >= 0 ? '+' : '-';
-  const absoluteOffset = Math.abs(offsetMinutes);
-  const offsetHours = String(Math.floor(absoluteOffset / 60)).padStart(2, '0');
-  const offsetMins = String(absoluteOffset % 60).padStart(2, '0');
-
-  return `${toDateValue(date)}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:00${sign}${offsetHours}:${offsetMins}`;
+function toLocalDateTimeValue(date) {
+  return `${toDateValue(date)}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:00`;
 }
 
 function getGoalCalendarDate(goal) {
@@ -106,8 +100,8 @@ function buildRoutineTimedRange(goal, date) {
   const timeZone = getLocalTimeZone();
 
   return {
-    start: { dateTime: toDateTimeValue(start), timeZone },
-    end: { dateTime: toDateTimeValue(end), timeZone }
+    start: { dateTime: toLocalDateTimeValue(start), timeZone },
+    end: { dateTime: toLocalDateTimeValue(end), timeZone }
   };
 }
 
