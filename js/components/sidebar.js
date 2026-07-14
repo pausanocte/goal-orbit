@@ -4,7 +4,7 @@
 
 import { el, keyboardActivationAttrs } from '../utils.js';
 import { t, toggleLang, getLang } from '../i18n.js';
-import { exportData, importData, getActiveAreas, getAllGoals, getFreeItemLimit, isPremiumUnlocked } from '../store.js';
+import { exportData, importData, getActiveAreas, getFreeItemLimit, isPremiumUnlocked, getBillableAreaCount, getBillableGoalCount, hasSampleData, deleteSampleData } from '../store.js';
 import { openAreaModal } from './area-modal.js';
 import { appState, retryDriveSync } from '../sync-state.js';
 import { handleAuthClick, handleSignoutClick, isDriveAuthorized, getUserInfo } from '../services/drive-api.js';
@@ -14,12 +14,11 @@ export function renderSidebar(container, currentPage, onNavigate) {
   container.innerHTML = '';
   const lang = getLang();
   const freeItemLimit = getFreeItemLimit();
-  const allGoals = getAllGoals();
   const usage = {
-    areas: getActiveAreas().length,
-    routines: allGoals.filter(goal => goal.category === 'routines').length,
-    projects: allGoals.filter(goal => goal.category === 'projects').length,
-    resources: allGoals.filter(goal => goal.category === 'resources').length
+    areas: getBillableAreaCount(),
+    routines: getBillableGoalCount('routines'),
+    projects: getBillableGoalCount('projects'),
+    resources: getBillableGoalCount('resources')
   };
 
   // 閉じるボタン
@@ -272,6 +271,23 @@ export function renderSidebar(container, currentPage, onNavigate) {
   }
 
   // エクスポートボタン
+  if (hasSampleData()) {
+    const removeSamplesBtn = el('button', {
+      className: 'sidebar-action-btn',
+      style: 'justify-content: center; width: 100%; margin-bottom: 12px; color: var(--text-secondary);',
+      onClick: () => {
+        if (!confirm(lang === 'ja' ? 'サンプル項目をすべて削除しますか？' : 'Remove all sample items?')) return;
+        deleteSampleData();
+        renderSidebar(container, currentPage, onNavigate);
+        onNavigate(currentPage);
+      }
+    },
+      el('i', { 'data-lucide': 'trash-2' }),
+      el('span', {}, lang === 'ja' ? 'サンプルをすべて削除' : 'Remove samples')
+    );
+    dataSection.appendChild(removeSamplesBtn);
+  }
+
   const exportBtn = el('button', {
     className: 'sidebar-action-btn',
     onClick: () => {

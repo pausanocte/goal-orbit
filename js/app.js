@@ -9,10 +9,11 @@ import { renderAreaPage } from './components/area-page.js';
 import { renderMonthlyReview, flushMonthlyReviewAutosave } from './components/monthly-review.js';
 import { renderArchives } from './components/archives.js';
 import { openSyncConflictModal } from './components/sync-conflict-modal.js';
-import { migrateIfNeeded, getFullData, restoreFullData, getLastModified, initializeSampleDataIfNeeded, hasLocalUserChanges, markDataSynced, saveRecoveryBackup, setPremiumUnlocked, purgeExpiredTrash } from './store.js';
+import { migrateIfNeeded, getFullData, restoreFullData, getLastModified, hasLocalUserChanges, markDataSynced, saveRecoveryBackup, setPremiumUnlocked, purgeExpiredTrash, shouldAskSampleChoice, markSampleChoice, createSampleData } from './store.js';
 import { initDriveApi, isDriveAuthorized, downloadBackup, uploadBackup, findExistingBackupFile } from './services/drive-api.js';
 import { refreshPremiumEntitlement } from './services/premium-api.js';
 import { setRetryDriveSyncHandler, setSyncStatus } from './sync-state.js';
+import { el } from './utils.js';
 
 let syncDebounceTimer = null;
 let syncReady = false;
@@ -235,6 +236,53 @@ function renderPage() {
 }
 
 // 初期レンダリング
+function showSampleChoiceModalIfNeeded() {
+  if (!shouldAskSampleChoice()) return;
+
+  const overlay = el('div', { className: 'modal-overlay active sample-choice-overlay' });
+  const modal = el('div', { className: 'modal active sample-choice-modal' },
+    el('div', { className: 'modal-header' },
+      el('div', {},
+        el('h2', { className: 'modal-title' }, 'Orbitを始める'),
+        el('p', { className: 'page-subtitle', style: 'margin: 6px 0 0;' }, '最初の状態を選んでください。サンプルは無料枠に含まれず、あとから削除できます。')
+      )
+    ),
+    el('div', { className: 'sample-choice-grid' },
+      el('button', {
+        type: 'button',
+        className: 'sample-choice-card',
+        onClick: () => {
+          createSampleData();
+          markSampleChoice('sample');
+          overlay.remove();
+          navigateTo('dashboard');
+        }
+      },
+        el('i', { 'data-lucide': 'sparkles' }),
+        el('strong', {}, 'サンプルで試す'),
+        el('span', {}, '3つのAreaと目標例を使って、操作感をすぐ確認します。')
+      ),
+      el('button', {
+        type: 'button',
+        className: 'sample-choice-card',
+        onClick: () => {
+          markSampleChoice('empty');
+          overlay.remove();
+          navigateTo('dashboard');
+        }
+      },
+        el('i', { 'data-lucide': 'file-plus-2' }),
+        el('strong', {}, '空の状態で始める'),
+        el('span', {}, '自分のAreaと目標だけを最初から登録します。')
+      )
+    )
+  );
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+  if (window.lucide) window.lucide.createIcons();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   if (window.__orbitAppInitialized) return;
   window.__orbitAppInitialized = true;
@@ -250,7 +298,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setRetryDriveSyncHandler(retryDriveSync);
   migrateIfNeeded(); // v2からのマイグレーション
   purgeExpiredTrash();
-  initializeSampleDataIfNeeded(); // サンプルデータの投入
   initDriveApi(handleDriveStatusChange);
 
   const openBtn = document.getElementById('sidebar-open-btn');
@@ -264,4 +311,5 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('pagehide', flushPendingPageState);
 
   navigateTo('dashboard');
+  showSampleChoiceModalIfNeeded();
 });

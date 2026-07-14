@@ -14,6 +14,7 @@ const LOCAL_USER_CHANGES_KEY = 'orbit_local_user_changes';
 const RECOVERY_BACKUP_KEY = 'orbit_recovery_backup';
 const FREE_ITEM_LIMIT = 4;
 const PREMIUM_UNLOCK_KEY = 'orbit_premium_unlocked';
+const SAMPLE_CHOICE_KEY = 'orbit_sample_choice';
 const DATA_VERSION = '3.1';
 const MAX_IMPORT_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_IMPORT_AREAS = 1000;
@@ -102,11 +103,41 @@ export function getFreeItemLimit() {
 }
 
 export function canAddArea() {
-  return isPremiumUnlocked() || getAllAreas().length < FREE_ITEM_LIMIT;
+  return isPremiumUnlocked() || getBillableAreaCount() < FREE_ITEM_LIMIT;
 }
 
 export function canAddGoal(category) {
-  return isPremiumUnlocked() || getAllGoals().filter(g => g.category === category).length < FREE_ITEM_LIMIT;
+  return isPremiumUnlocked() || getBillableGoalCount(category) < FREE_ITEM_LIMIT;
+}
+
+export function getBillableAreaCount() {
+  return getAllAreas().filter(area => !area.archived && !area.isSample).length;
+}
+
+export function getBillableGoalCount(category) {
+  return getAllGoals().filter(goal => goal.category === category && !goal.archived && !goal.isSample).length;
+}
+
+export function hasSampleData() {
+  return getAllAreas(true).some(area => area.isSample && !area.deletedAt) ||
+    getAllGoals(true).some(goal => goal.isSample && !goal.deletedAt);
+}
+
+export function hasAnyOrbitData() {
+  return loadData(AREAS_KEY).length > 0 || loadData(GOALS_KEY).length > 0 || loadData(REVIEWS_KEY).length > 0;
+}
+
+export function shouldAskSampleChoice() {
+  return !localStorage.getItem(SAMPLE_CHOICE_KEY) && !hasAnyOrbitData();
+}
+
+export function markSampleChoice(choice) {
+  localStorage.setItem(SAMPLE_CHOICE_KEY, choice);
+}
+
+export function deleteSampleData() {
+  saveData(AREAS_KEY, getAllAreas(true).filter(area => !area.isSample), { immediateSync: true });
+  saveData(GOALS_KEY, getAllGoals(true).filter(goal => !goal.isSample), { immediateSync: true });
 }
 
 // ===== Migration from v2 =====
@@ -884,9 +915,8 @@ export function restoreFullData(data) {
   localStorage.setItem(LOCAL_USER_CHANGES_KEY, 'false');
 }
 
-export function initializeSampleDataIfNeeded() {
-  const areas = loadData(AREAS_KEY);
-  if (areas.length > 0) return;
+export function createSampleData() {
+  if (hasSampleData()) return;
 
   const workAreaId = generateId();
   const healthAreaId = generateId();
@@ -902,6 +932,7 @@ export function initializeSampleDataIfNeeded() {
       icon: 'briefcase',
       order: 0,
       archived: false,
+      isSample: true,
       createdAt: now,
       updatedAt: now
     },
@@ -913,6 +944,7 @@ export function initializeSampleDataIfNeeded() {
       icon: 'heart',
       order: 1,
       archived: false,
+      isSample: true,
       createdAt: now,
       updatedAt: now
     },
@@ -924,6 +956,7 @@ export function initializeSampleDataIfNeeded() {
       icon: 'book-open',
       order: 2,
       archived: false,
+      isSample: true,
       createdAt: now,
       updatedAt: now
     }
@@ -952,6 +985,7 @@ export function initializeSampleDataIfNeeded() {
       status: 'active',
       priority: 'medium',
       archived: false,
+      isSample: true,
       dueDate: null,
       subtasks: [],
       frequency: 'daily',
@@ -968,6 +1002,7 @@ export function initializeSampleDataIfNeeded() {
       status: 'active',
       priority: 'high',
       archived: false,
+      isSample: true,
       dueDate: null,
       subtasks: [],
       frequency: 'custom',
@@ -984,6 +1019,7 @@ export function initializeSampleDataIfNeeded() {
       status: 'active',
       priority: 'high',
       archived: false,
+      isSample: true,
       dueDate: twoWeeksLaterStr,
       subtasks: [
         { id: generateId(), text: 'ワイヤーフレームとデザインの作成', completed: true },
@@ -1004,6 +1040,7 @@ export function initializeSampleDataIfNeeded() {
       status: 'active',
       priority: 'medium',
       archived: false,
+      isSample: true,
       dueDate: oneMonthLaterStr,
       subtasks: [
         { id: generateId(), text: 'クリニックの選定と空き状況確認', completed: false },
@@ -1016,7 +1053,9 @@ export function initializeSampleDataIfNeeded() {
     }
   ];
 
-  saveData(AREAS_KEY, sampleAreas, { userChange: false });
-  saveData(GOALS_KEY, sampleGoals, { userChange: false });
+  const existingAreas = getAllAreas(true);
+  const existingGoals = getAllGoals(true);
+  saveData(AREAS_KEY, [...existingAreas, ...sampleAreas], { userChange: false });
+  saveData(GOALS_KEY, [...existingGoals, ...sampleGoals], { userChange: false });
   localStorage.setItem(LOCAL_USER_CHANGES_KEY, 'false');
 }
