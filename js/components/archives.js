@@ -132,7 +132,7 @@ function renderTrashSection(container, onRefresh) {
     el('div', { className: 'card-header-flex', style: 'margin-bottom: 12px;' },
       el('h2', { className: 'card-title', style: 'margin-bottom: 0;' },
         el('i', { 'data-lucide': 'trash-2' }),
-        el('span', {}, ' ゴミ箱')
+        el('span', {}, ` ${t('trash.title')}`)
       ),
       el('span', { className: 'status-badge', style: 'color: var(--text-secondary); border-color: var(--border-subtle);' }, `${total}`)
     )
@@ -141,7 +141,7 @@ function renderTrashSection(container, onRefresh) {
   if (total === 0) {
     container.appendChild(
       el('div', { className: 'empty-state small' },
-        el('p', {}, 'ゴミ箱は空です')
+        el('p', {}, t('trash.empty'))
       )
     );
     return;
@@ -159,8 +159,8 @@ function renderTrashSection(container, onRefresh) {
           el('button', {
             type: 'button',
             className: 'icon-btn',
-            title: '復元',
-            'aria-label': '復元',
+            title: t('archives.restore'),
+            'aria-label': t('archives.restore'),
             onClick: () => {
               restoreArea(area.id);
               onRefresh();
@@ -168,7 +168,7 @@ function renderTrashSection(container, onRefresh) {
           }, el('i', { 'data-lucide': 'undo-2' }))
         ),
         el('h3', { className: 'goal-card-title' }, area.name),
-        el('p', { className: 'goal-card-desc' }, '30日後に完全削除されます')
+        el('p', { className: 'goal-card-desc' }, t('trash.retentionHelp'))
       )
     );
   });
@@ -186,8 +186,8 @@ function renderTrashSection(container, onRefresh) {
           el('button', {
             type: 'button',
             className: 'icon-btn',
-            title: '復元',
-            'aria-label': '復元',
+            title: t('archives.restore'),
+            'aria-label': t('archives.restore'),
             onClick: () => {
               restoreGoal(goal.id);
               onRefresh();
@@ -195,7 +195,7 @@ function renderTrashSection(container, onRefresh) {
           }, el('i', { 'data-lucide': 'undo-2' }))
         ),
         el('h3', { className: 'goal-card-title' }, goal.title),
-        el('p', { className: 'goal-card-desc' }, '30日後に完全削除されます')
+        el('p', { className: 'goal-card-desc' }, t('trash.retentionHelp'))
       )
     );
   });
@@ -217,7 +217,7 @@ function createArchivedAreaCard(area, index, onRefresh) {
     el('div', { className: 'goal-card-actions' },
       el('button', {
         className: 'icon-btn',
-        title: '復元',
+        title: t('archives.restore'),
         onClick: async () => {
           updateArea(area.id, { completedDate: null });
           onRefresh();
@@ -227,7 +227,7 @@ function createArchivedAreaCard(area, index, onRefresh) {
       ),
       el('button', {
         className: 'icon-btn',
-        title: 'ゴミ箱へ移動',
+        title: t('trash.moveToTrash'),
         onClick: async () => {
           await confirmAndTrashArea(area, onRefresh);
         }

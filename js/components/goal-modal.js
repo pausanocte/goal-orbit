@@ -75,12 +75,12 @@ function showCalendarRetryNotice(form, goalId, onSave, errorMessage = '') {
 function createGoalReviewHistory(goal) {
   const reviews = getReviewsByGoalId(goal.id);
   const section = el('div', { className: 'form-field goal-review-history' },
-    el('label', { className: 'form-label' }, '振り返り履歴')
+    el('label', { className: 'form-label' }, t('goal.reviewHistory'))
   );
 
   if (reviews.length === 0) {
     section.appendChild(
-      el('div', { className: 'glass-card', style: 'padding: 12px; color: var(--text-secondary); font-size: 0.82rem;' }, 'この項目の振り返りはまだありません。')
+      el('div', { className: 'glass-card', style: 'padding: 12px; color: var(--text-secondary); font-size: 0.82rem;' }, t('goal.noReviewHistory'))
     );
     return section;
   }
@@ -98,7 +98,7 @@ function createGoalReviewHistory(goal) {
           el('span', {
             className: 'status-badge',
             style: `font-size: 0.72rem; color: ${achieved ? '#34D399' : '#F59E0B'}; border-color: ${achieved ? '#34D399' : '#F59E0B'};`
-          }, achieved ? '達成' : '未達成')
+          }, achieved ? t('review.achieved') : t('review.notAchieved'))
         ),
         el('p', { style: 'margin: 0; color: var(--text-secondary); font-size: 0.82rem; white-space: pre-wrap;' }, commentText)
       )
@@ -355,7 +355,7 @@ export function openGoalModal(goalId, defaultArea = null, onSave = null) {
     }
   },
     el('i', { 'data-lucide': 'plus' }),
-    el('span', {}, '新規作成')
+    el('span', {}, t('common.createNew'))
   );
 
   const areaContainer = el('div', { style: 'display: flex; align-items: center; width: 100%;' },

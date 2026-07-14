@@ -121,6 +121,9 @@ const translations = {
     'modal.add': '追加',
     'modal.update': '更新',
 
+    'goal.reviewHistory': '振り返り履歴',
+    'goal.noReviewHistory': 'この項目の振り返りはまだありません。',
+
     // Status
     'status.active': 'アクティブ',
     'status.onHold': '保留中',
@@ -152,6 +155,10 @@ const translations = {
     'review.noReviews': 'まだ振り返りがありません',
     'review.written': '記入済み',
     'review.notWritten': '未記入',
+    'review.achieved': '達成',
+    'review.notAchieved': '未達成',
+
+    'review.goalPlaceholder': 'この項目の振り返りを書いてください...',
 
     // Archives
     'archives.title': 'アーカイブ',
@@ -163,6 +170,11 @@ const translations = {
     'archives.permanentDelete': '完全に削除',
     'archives.confirmDelete': '「{0}」を完全に削除しますか？',
 
+    'trash.title': 'ゴミ箱',
+    'trash.empty': 'ゴミ箱は空です',
+    'trash.retentionHelp': '30日後に完全削除されます',
+    'trash.moveToTrash': 'ゴミ箱へ移動',
+
     // Export/Import
     'export.success': 'データをエクスポートしました',
     'import.confirm': 'インポートすると現在のデータが上書きされます。続行しますか？',
@@ -173,6 +185,7 @@ const translations = {
     'subtasks.progress': '{0}/{1} 完了',
 
     // Common
+    'common.createNew': '新規作成',
     'common.edit': '編集',
     'common.archive': 'アーカイブ',
     'common.delete': '削除',
@@ -198,11 +211,22 @@ const translations = {
     'premium.preparing': '現在、有料版の販売準備中です',
     'premium.buy': '有料版を購入',
     'premium.comingSoon': '販売準備中',
+    'sampleChoice.title': 'Orbitを始める',
+    'sampleChoice.subtitle': '最初の状態を選んでください。サンプルは無料枠に含まれず、あとから削除できます。',
+    'sampleChoice.useSample': 'サンプルで試す',
+    'sampleChoice.useSampleDesc': '3つのAreaと目標例を使って、操作感をすぐ確認します。',
+    'sampleChoice.startEmpty': '空の状態で始める',
+    'sampleChoice.startEmptyDesc': '自分のAreaと目標だけを最初から登録します。',
     'dashboard.noRoutines': 'Routinesはありません',
     'dashboard.noProjects': 'Projectsはありません',
     'dashboard.customFrequencyPrompt': 'カスタムの頻度を入力してください（例: 週3回、月2回など）:',
     'today.title': '今日見る',
     'today.subtitle': '今日確認したい目標をすばやく見返せます',
+    'today.projectNextActions': '今日着手するProjectの次アクション',
+    'today.projectNextActionsEmpty': '今日着手できるProjectの次アクションはありません',
+    'today.nextAction': '次アクション',
+    'today.dueDates': '期限',
+    'today.overdueEmpty': '期限超過の目標はありません',
     'today.highPriority': '優先度が高い目標',
     'today.dueSoonEmpty': '直近で期限が近い目標はありません',
     'today.highPriorityEmpty': '優先度が高い進行中の目標はありません',
@@ -388,6 +412,9 @@ const translations = {
     'review.noReviews': 'No reviews yet',
     'review.written': 'Written',
     'review.notWritten': 'Not written',
+    'review.achieved': 'Achieved',
+    'review.notAchieved': 'Not achieved',
+    'review.goalPlaceholder': 'Write a review for this item...',
 
     'archives.title': 'Archives',
     'archives.subtitle': 'Completed goals',
@@ -397,6 +424,10 @@ const translations = {
     'archives.restore': 'Restore',
     'archives.permanentDelete': 'Delete permanently',
     'archives.confirmDelete': 'Permanently delete "{0}"?',
+    'trash.title': 'Trash',
+    'trash.empty': 'Trash is empty',
+    'trash.retentionHelp': 'Permanently deleted after 30 days',
+    'trash.moveToTrash': 'Move to Trash',
 
     'export.success': 'Data exported successfully',
     'import.confirm': 'Importing will overwrite current data. Continue?',
@@ -405,6 +436,10 @@ const translations = {
 
     'subtasks.progress': '{0}/{1} done',
 
+    'goal.reviewHistory': 'Review history',
+    'goal.noReviewHistory': 'No reviews for this item yet.',
+
+    'common.createNew': 'Create new',
     'common.edit': 'Edit',
     'common.archive': 'Archive',
     'common.delete': 'Delete',
@@ -430,11 +465,22 @@ const translations = {
     'premium.preparing': 'Premium purchasing is being prepared',
     'premium.buy': 'Buy premium',
     'premium.comingSoon': 'Coming soon',
+    'sampleChoice.title': 'Start Orbit',
+    'sampleChoice.subtitle': 'Choose how you want to start. Sample items do not count toward the free plan and can be removed later.',
+    'sampleChoice.useSample': 'Try with samples',
+    'sampleChoice.useSampleDesc': 'Use 3 sample Areas and example goals to quickly explore the app.',
+    'sampleChoice.startEmpty': 'Start empty',
+    'sampleChoice.startEmptyDesc': 'Start by adding only your own Areas and goals.',
     'dashboard.noRoutines': 'No routines',
     'dashboard.noProjects': 'No projects',
     'dashboard.customFrequencyPrompt': 'Enter a custom frequency (e.g. 3 times a week, twice a month):',
     'today.title': 'Today',
     'today.subtitle': 'A focused view of the goals worth checking today',
+    'today.projectNextActions': 'Project next actions',
+    'today.projectNextActionsEmpty': 'No project next actions ready for today',
+    'today.nextAction': 'Next action',
+    'today.dueDates': 'Due dates',
+    'today.overdueEmpty': 'No overdue goals',
     'today.highPriority': 'High Priority',
     'today.dueSoonEmpty': 'Nothing urgent right now',
     'today.highPriorityEmpty': 'No high-priority active goals',

@@ -685,13 +685,30 @@ export function getDueSoonGoals(withinDays = 3) {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
   return active
+    .filter(g => g.status !== 'completed')
     .filter(g => g.dueDate)
     .map(g => {
       const due = new Date(g.dueDate);
       due.setHours(0, 0, 0, 0);
       return { ...g, daysLeft: Math.ceil((due - now) / (1000 * 60 * 60 * 24)) };
     })
-    .filter(g => g.daysLeft <= withinDays)
+    .filter(g => g.daysLeft >= 0 && g.daysLeft <= withinDays)
+    .sort((a, b) => a.daysLeft - b.daysLeft);
+}
+
+export function getOverdueGoals() {
+  const active = getActiveGoals();
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  return active
+    .filter(g => g.status !== 'completed')
+    .filter(g => g.dueDate)
+    .map(g => {
+      const due = new Date(g.dueDate);
+      due.setHours(0, 0, 0, 0);
+      return { ...g, daysLeft: Math.ceil((due - now) / (1000 * 60 * 60 * 24)) };
+    })
+    .filter(g => g.daysLeft < 0)
     .sort((a, b) => a.daysLeft - b.daysLeft);
 }
 

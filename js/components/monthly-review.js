@@ -319,12 +319,12 @@ export function renderMonthlyReview(container) {
     const checkLabel = el('label', {
       htmlFor: `achieved-${goal.id}`,
       style: 'display: flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 550; cursor: pointer; color: var(--text-primary); user-select: none;'
-    }, checkbox, el('span', {}, '達成'));
+    }, checkbox, el('span', {}, t('review.achieved')));
 
     const textarea = el('textarea', {
       id: `comment-${goal.id}`,
       className: 'form-input form-textarea',
-      placeholder: 'この項目の振り返りを書いてください...',
+      placeholder: t('review.goalPlaceholder'),
       rows: '2',
       style: 'margin-top: 8px; font-size: 0.82rem; resize: vertical; min-height: 48px;'
     });

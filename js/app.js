@@ -14,6 +14,7 @@ import { initDriveApi, isDriveAuthorized, downloadBackup, uploadBackup, findExis
 import { refreshPremiumEntitlement } from './services/premium-api.js';
 import { setRetryDriveSyncHandler, setSyncStatus } from './sync-state.js';
 import { el } from './utils.js';
+import { t } from './i18n.js';
 
 let syncDebounceTimer = null;
 let syncReady = false;
@@ -243,8 +244,8 @@ function showSampleChoiceModalIfNeeded() {
   const modal = el('div', { className: 'modal active sample-choice-modal' },
     el('div', { className: 'modal-header' },
       el('div', {},
-        el('h2', { className: 'modal-title' }, 'Orbitを始める'),
-        el('p', { className: 'page-subtitle', style: 'margin: 6px 0 0;' }, '最初の状態を選んでください。サンプルは無料枠に含まれず、あとから削除できます。')
+        el('h2', { className: 'modal-title' }, t('sampleChoice.title')),
+        el('p', { className: 'page-subtitle', style: 'margin: 6px 0 0;' }, t('sampleChoice.subtitle'))
       )
     ),
     el('div', { className: 'sample-choice-grid' },
@@ -259,8 +260,8 @@ function showSampleChoiceModalIfNeeded() {
         }
       },
         el('i', { 'data-lucide': 'sparkles' }),
-        el('strong', {}, 'サンプルで試す'),
-        el('span', {}, '3つのAreaと目標例を使って、操作感をすぐ確認します。')
+        el('strong', {}, t('sampleChoice.useSample')),
+        el('span', {}, t('sampleChoice.useSampleDesc'))
       ),
       el('button', {
         type: 'button',
@@ -272,8 +273,8 @@ function showSampleChoiceModalIfNeeded() {
         }
       },
         el('i', { 'data-lucide': 'file-plus-2' }),
-        el('strong', {}, '空の状態で始める'),
-        el('span', {}, '自分のAreaと目標だけを最初から登録します。')
+        el('strong', {}, t('sampleChoice.startEmpty')),
+        el('span', {}, t('sampleChoice.startEmptyDesc'))
       )
     )
   );

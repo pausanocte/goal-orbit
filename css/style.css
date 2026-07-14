@@ -2857,6 +2857,33 @@ select.form-input option {
   min-width: 0;
 }
 
+.today-due-group {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.today-due-group-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.today-due-group-title i {
+  width: 15px;
+  height: 15px;
+}
+
+.today-due-empty {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+}
+
 @media (max-width: 840px) {
   .today-page-grid {
     grid-template-columns: 1fr;
