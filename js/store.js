@@ -111,11 +111,11 @@ export function canAddGoal(category) {
 }
 
 export function getBillableAreaCount() {
-  return getAllAreas().filter(area => !area.archived && !area.isSample).length;
+  return getAllAreas().filter(area => !area.isSample).length;
 }
 
 export function getBillableGoalCount(category) {
-  return getAllGoals().filter(goal => goal.category === category && !goal.archived && !goal.isSample).length;
+  return getAllGoals().filter(goal => goal.category === category && !goal.isSample).length;
 }
 
 export function hasSampleData() {
@@ -292,6 +292,7 @@ export function updateArea(id, updates) {
 
 export function deleteArea(id, options = {}) {
   const deletedAt = new Date().toISOString();
+  const deletionBatchId = options.deletionBatchId || generateId();
   const calendarDeletedGoalIds = new Set(options.calendarDeletedGoalIds || []);
   const areas = getAllAreas(true);
   const areaIndex = areas.findIndex(a => a.id === id);
@@ -300,6 +301,7 @@ export function deleteArea(id, options = {}) {
   areas[areaIndex] = {
     ...areas[areaIndex],
     deletedAt,
+    deletionBatchId,
     deletedPreviousArchived: areas[areaIndex].archived,
     archived: true,
     updatedAt: deletedAt
@@ -310,6 +312,7 @@ export function deleteArea(id, options = {}) {
     return {
       ...goal,
       deletedAt,
+      deletionBatchId,
       deletedByAreaId: id,
       deletedPreviousArchived: goal.archived,
       deletedPreviousStatus: goal.status,
@@ -331,20 +334,25 @@ export function restoreArea(id) {
   const areaIndex = areas.findIndex(a => a.id === id);
   if (areaIndex === -1) return null;
   const restoredAt = new Date().toISOString();
+  const deletionBatchId = areas[areaIndex].deletionBatchId;
 
   areas[areaIndex] = {
     ...areas[areaIndex],
     deletedAt: null,
+    deletionBatchId: null,
     archived: areas[areaIndex].deletedPreviousArchived ?? false,
     deletedPreviousArchived: undefined,
     updatedAt: restoredAt
   };
 
   const goals = getAllGoals(true).map(goal => {
-    if (goal.deletedByAreaId !== id) return goal;
+    const isSameAreaDeletion = goal.deletedByAreaId === id ||
+      (deletionBatchId && goal.deletionBatchId === deletionBatchId);
+    if (!isSameAreaDeletion) return goal;
     return {
       ...goal,
       deletedAt: null,
+      deletionBatchId: null,
       deletedByAreaId: null,
       archived: goal.deletedPreviousArchived ?? false,
       status: goal.deletedPreviousStatus || goal.status,
@@ -506,10 +514,12 @@ export function deleteGoal(id, options = {}) {
   const idx = goals.findIndex(g => g.id === id);
   if (idx === -1) return null;
   const deletedAt = new Date().toISOString();
+  const deletionBatchId = options.deletionBatchId || generateId();
   const calendarDeleted = !!options.calendarDeleted;
   goals[idx] = {
     ...goals[idx],
     deletedAt,
+    deletionBatchId,
     deletedPreviousArchived: goals[idx].archived,
     deletedPreviousStatus: goals[idx].status,
     archived: true,
@@ -523,12 +533,20 @@ export function deleteGoal(id, options = {}) {
 }
 
 export function restoreGoal(id) {
+  const deletedGoal = getAllGoals(true).find(g => g.id === id);
+  const parentArea = deletedGoal?.areaId ? getAreaById(deletedGoal.areaId, true) : null;
+  if (parentArea?.deletedAt) {
+    restoreArea(parentArea.id);
+    return getAllGoals(true).find(g => g.id === id) || null;
+  }
+
   const goals = getAllGoals(true);
   const idx = goals.findIndex(g => g.id === id);
   if (idx === -1) return null;
   goals[idx] = {
     ...goals[idx],
     deletedAt: null,
+    deletionBatchId: null,
     deletedByAreaId: null,
     archived: goals[idx].deletedPreviousArchived ?? false,
     status: goals[idx].deletedPreviousStatus || goals[idx].status,

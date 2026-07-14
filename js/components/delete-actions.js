@@ -5,7 +5,6 @@
 import { el } from '../utils.js';
 import { t } from '../i18n.js';
 import { deleteArea, deleteGoal, getGoalsByArea, restoreArea, restoreGoal } from '../store.js';
-import { deleteGoalCalendarEvent } from '../services/calendar-api.js';
 
 function tr(key, fallback, ...args) {
   const value = t(key, ...args);
@@ -39,25 +38,6 @@ function showUndoToast(message, undoLabel, onUndo) {
   if (window.lucide) window.lucide.createIcons();
 }
 
-async function maybeDeleteCalendarEvent(goal) {
-  if (!goal?.googleCalendarEventId) return false;
-
-  const shouldDelete = confirm(tr(
-    'calendar.confirmDeleteWithGoal',
-    'この目標に紐づくGoogleカレンダーの予定も削除しますか？'
-  ));
-  if (!shouldDelete) return false;
-
-  try {
-    await deleteGoalCalendarEvent(goal);
-    return true;
-  } catch (err) {
-    console.error('Calendar delete failed', err);
-    alert(`${tr('calendar.deleteFailed', 'Googleカレンダーから削除できませんでした。Googleログインの権限を確認してください。')}\n\n${err.message || ''}`);
-    throw err;
-  }
-}
-
 export async function confirmAndTrashGoal(goal, onRefresh) {
   if (!goal) return false;
   const confirmed = confirm(tr(
@@ -67,14 +47,7 @@ export async function confirmAndTrashGoal(goal, onRefresh) {
   ));
   if (!confirmed) return false;
 
-  let calendarDeleted = false;
-  try {
-    calendarDeleted = await maybeDeleteCalendarEvent(goal);
-  } catch {
-    return false;
-  }
-
-  deleteGoal(goal.id, { calendarDeleted });
+  deleteGoal(goal.id);
   onRefresh?.();
   showUndoToast(
     tr('delete.goalMovedToTrash', '目標をゴミ箱へ移動しました。'),
@@ -98,29 +71,7 @@ export async function confirmAndTrashArea(area, onRefresh) {
   ));
   if (!confirmed) return false;
 
-  const calendarGoals = areaGoals.filter(goal => goal.googleCalendarEventId);
-  const calendarDeletedGoalIds = [];
-  if (calendarGoals.length > 0) {
-    const shouldDeleteCalendar = confirm(tr(
-      'calendar.confirmDeleteWithArea',
-      'このArea内のGoogleカレンダー予定 {0} 件も削除しますか？',
-      calendarGoals.length
-    ));
-    if (shouldDeleteCalendar) {
-      try {
-        for (const goal of calendarGoals) {
-          await deleteGoalCalendarEvent(goal);
-          calendarDeletedGoalIds.push(goal.id);
-        }
-      } catch (err) {
-        console.error('Calendar delete failed', err);
-        alert(`${tr('calendar.deleteFailed', 'Googleカレンダーから削除できませんでした。Googleログインの権限を確認してください。')}\n\n${err.message || ''}`);
-        return false;
-      }
-    }
-  }
-
-  deleteArea(area.id, { calendarDeletedGoalIds });
+  deleteArea(area.id);
   onRefresh?.();
   showUndoToast(
     tr('delete.areaMovedToTrash', 'Areaをゴミ箱へ移動しました。'),

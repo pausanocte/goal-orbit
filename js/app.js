@@ -19,6 +19,7 @@ import { t } from './i18n.js';
 let syncDebounceTimer = null;
 let syncReady = false;
 let startupSyncInProgress = false;
+let startupSyncResolved = false;
 let localSyncInProgress = false;
 let localSyncQueued = false;
 const SYNC_CONFLICT_TOLERANCE_MS = 30 * 1000;
@@ -56,8 +57,15 @@ function handleDriveStatusChange(status) {
     performStartupSync();
   } else {
     if (status === 'ready') setPremiumUnlocked(false);
+    if (status === 'ready' || status === 'error') resolveStartupSyncForSampleChoice();
     triggerSidebarRender();
   }
+}
+
+function resolveStartupSyncForSampleChoice() {
+  if (startupSyncResolved) return;
+  startupSyncResolved = true;
+  showSampleChoiceModalIfNeeded();
 }
 
 async function refreshPremiumAfterLogin() {
@@ -136,9 +144,11 @@ async function performStartupSync() {
     if (hasLocalUserChanges()) {
       window.dispatchEvent(new Event('orbitDataChanged'));
     }
+    resolveStartupSyncForSampleChoice();
   } catch (err) {
     console.error('Startup sync failed', err);
     setSyncStatus('error');
+    resolveStartupSyncForSampleChoice();
   } finally {
     startupSyncInProgress = false;
     triggerSidebarRender();
@@ -312,5 +322,4 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('pagehide', flushPendingPageState);
 
   navigateTo('dashboard');
-  showSampleChoiceModalIfNeeded();
 });

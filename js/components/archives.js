@@ -125,7 +125,9 @@ export function renderArchives(container, onRefresh) {
 
 function renderTrashSection(container, onRefresh) {
   const deletedAreas = getDeletedAreas().sort((a, b) => new Date(b.deletedAt || b.updatedAt) - new Date(a.deletedAt || a.updatedAt));
-  const deletedGoals = getDeletedGoals().sort((a, b) => new Date(b.deletedAt || b.updatedAt) - new Date(a.deletedAt || a.updatedAt));
+  const deletedAreaIds = new Set(deletedAreas.map(area => area.id));
+  const allDeletedGoals = getDeletedGoals().sort((a, b) => new Date(b.deletedAt || b.updatedAt) - new Date(a.deletedAt || a.updatedAt));
+  const deletedGoals = allDeletedGoals.filter(goal => !goal.deletedByAreaId || !deletedAreaIds.has(goal.deletedByAreaId));
   const total = deletedAreas.length + deletedGoals.length;
 
   container.appendChild(
@@ -149,6 +151,7 @@ function renderTrashSection(container, onRefresh) {
 
   const grid = el('div', { className: 'goals-grid' });
   deletedAreas.forEach(area => {
+    const childCount = allDeletedGoals.filter(goal => goal.deletedByAreaId === area.id).length;
     grid.appendChild(
       el('div', {
         className: 'goal-card archived-card',
@@ -168,6 +171,9 @@ function renderTrashSection(container, onRefresh) {
           }, el('i', { 'data-lucide': 'undo-2' }))
         ),
         el('h3', { className: 'goal-card-title' }, area.name),
+        childCount > 0
+          ? el('p', { className: 'goal-card-desc' }, t('trash.areaChildRestoreHelp', childCount))
+          : null,
         el('p', { className: 'goal-card-desc' }, t('trash.retentionHelp'))
       )
     );
