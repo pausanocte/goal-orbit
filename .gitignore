@@ -22,6 +22,17 @@ temp/
 *.tmp
 *.log
 
+# Android / Play Store local artifacts
+*.jks
+*.keystore
+android/.gradle/
+android/build/
+android/app/build/
+android/app-release*.apk
+android/app-release*.aab
+android/decompressed/
+playstore/secrets/
+
 # Exported user backups
 orbit-backup-*.json
 orbit-cloud-backup*.json

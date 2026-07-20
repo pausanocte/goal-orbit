@@ -1,0 +1,33 @@
+{
+  "packageId": "app.goalorbit.mobile",
+  "host": "goal-orbit-app.pages.dev",
+  "name": "Orbit",
+  "launcherName": "Orbit",
+  "display": "standalone",
+  "themeColor": "#111118",
+  "themeColorDark": "#111118",
+  "navigationColor": "#0A0A0F",
+  "navigationColorDark": "#0A0A0F",
+  "navigationDividerColor": "#0A0A0F",
+  "navigationDividerColorDark": "#0A0A0F",
+  "backgroundColor": "#0A0A0F",
+  "enableNotifications": false,
+  "startUrl": "/",
+  "iconUrl": "https://goal-orbit-app.pages.dev/assets/icons/orbit-icon-512.png",
+  "maskableIconUrl": "https://goal-orbit-app.pages.dev/assets/icons/orbit-icon-maskable-512.png",
+  "webManifestUrl": "https://goal-orbit-app.pages.dev/manifest.webmanifest",
+  "orientation": "portrait",
+  "appVersion": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [],
+  "signingKey": {
+    "path": "./playstore-signing-key.jks",
+    "alias": "orbit"
+  },
+  "fingerprints": [
+    {
+      "name": "Play app signing",
+      "value": "REPLACE_WITH_PLAY_APP_SIGNING_SHA256"
+    }
+  ]
+}

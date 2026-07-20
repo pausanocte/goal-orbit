@@ -2,10 +2,18 @@ import { ORBIT_CONFIG } from '../config.js';
 import { getGoogleAccessToken } from './drive-api.js';
 import { setPremiumUnlocked } from '../store.js';
 
-const apiBaseUrl = ORBIT_CONFIG.premiumApiBaseUrl.replace(/\/$/, '');
+const apiBaseUrl = (ORBIT_CONFIG.premiumApiBaseUrl || '').replace(/\/$/, '');
 
 export function isPremiumPurchaseConfigured() {
+  return ORBIT_CONFIG.externalPremiumPurchaseEnabled === true && Boolean(apiBaseUrl);
+}
+
+export function isPremiumEntitlementConfigured() {
   return Boolean(apiBaseUrl);
+}
+
+export function shouldShowPremiumUpsell() {
+  return ORBIT_CONFIG.premiumUpsellEnabled !== false;
 }
 
 async function premiumRequest(path, options = {}) {
@@ -32,7 +40,7 @@ async function premiumRequest(path, options = {}) {
 }
 
 export async function refreshPremiumEntitlement() {
-  if (!isPremiumPurchaseConfigured() || !getGoogleAccessToken()) return false;
+  if (!isPremiumEntitlementConfigured() || !getGoogleAccessToken()) return false;
   const result = await premiumRequest('/entitlement');
   setPremiumUnlocked(result.premium === true);
   return result.premium === true;

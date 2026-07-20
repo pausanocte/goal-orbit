@@ -7,8 +7,8 @@ import { t, toggleLang, getLang } from '../i18n.js';
 import { exportData, importData, getActiveAreas, getFreeItemLimit, isPremiumUnlocked, getBillableAreaCount, getBillableGoalCount, hasSampleData, deleteSampleData } from '../store.js';
 import { openAreaModal } from './area-modal.js';
 import { appState, retryDriveSync } from '../sync-state.js';
-import { handleAuthClick, handleSignoutClick, isDriveAuthorized, getUserInfo } from '../services/drive-api.js';
-import { isPremiumPurchaseConfigured, startPremiumPurchase } from '../services/premium-api.js';
+import { handleAuthClick, handleSignoutClick, isDriveAuthorized, getUserInfo, getLastAuthError } from '../services/drive-api.js';
+import { isPremiumPurchaseConfigured, shouldShowPremiumUpsell, startPremiumPurchase } from '../services/premium-api.js';
 
 export function renderSidebar(container, currentPage, onNavigate) {
   container.innerHTML = '';
@@ -52,6 +52,14 @@ export function renderSidebar(container, currentPage, onNavigate) {
       el('span', {}, lang === 'ja' ? '再読み込み' : 'Reload')
     ));
   } else if (!isDriveAuthorized()) {
+    const authError = getLastAuthError();
+    if (authError) {
+      syncSection.appendChild(el('div', {
+        style: 'font-size: 11px; color: var(--danger, #ef4444); line-height: 1.5; margin-bottom: 8px; word-break: break-word;'
+      }, lang === 'ja'
+        ? `Googleログインに失敗しました: ${authError}`
+        : `Google sign-in failed: ${authError}`));
+    }
     const loginBtn = el('button', {
       className: 'sidebar-action-btn',
       style: 'background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-subtle); justify-content: center; width: 100%;',
@@ -236,21 +244,22 @@ export function renderSidebar(container, currentPage, onNavigate) {
     );
     dataSection.appendChild(freePlanCard);
 
-    const purchaseConfigured = isPremiumPurchaseConfigured();
-    const purchaseMessage = el('div', {
-      style: 'margin-bottom: 8px; font-size: 10px; line-height: 1.5; color: var(--text-tertiary);'
-    }, purchaseConfigured ? t('premium.unlockMessage') : t('premium.preparing'));
-    const licenseCard = el('div', {
-      className: 'glass-card',
-      style: 'padding: 12px; margin-bottom: 12px; width: 100%; background: rgba(255,255,255,0.03);'
-    },
-      el('div', { style: 'font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;' }, t('premium.unlock')),
-      purchaseMessage,
-      el('button', {
-        className: 'sidebar-action-btn',
-        style: 'justify-content: center; width: 100%; margin-top: 4px;',
-        disabled: !purchaseConfigured,
-        onClick: async () => {
+    if (shouldShowPremiumUpsell()) {
+      const purchaseConfigured = isPremiumPurchaseConfigured();
+      const purchaseMessage = el('div', {
+        style: 'margin-bottom: 8px; font-size: 10px; line-height: 1.5; color: var(--text-tertiary);'
+      }, purchaseConfigured ? t('premium.unlockMessage') : t('premium.preparing'));
+      const licenseCard = el('div', {
+        className: 'glass-card',
+        style: 'padding: 12px; margin-bottom: 12px; width: 100%; background: rgba(255,255,255,0.03);'
+      },
+        el('div', { style: 'font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;' }, t('premium.unlock')),
+        purchaseMessage,
+        el('button', {
+          className: 'sidebar-action-btn',
+          style: 'justify-content: center; width: 100%; margin-top: 4px;',
+          disabled: !purchaseConfigured,
+          onClick: async () => {
           if (!isDriveAuthorized()) {
             alert(lang === 'ja' ? '先にGoogleへログインしてください' : 'Please sign in with Google first');
             return;
@@ -264,10 +273,11 @@ export function renderSidebar(container, currentPage, onNavigate) {
             return;
             alert(lang === 'ja' ? '購入画面を開けませんでした。時間をおいて再度お試しください。' : 'Could not open checkout. Please try again.');
           }
-        }
-      }, el('i', { 'data-lucide': 'credit-card' }), el('span', {}, purchaseConfigured ? t('premium.buy') : t('premium.comingSoon')))
-    );
-    dataSection.appendChild(licenseCard);
+          }
+        }, el('i', { 'data-lucide': 'credit-card' }), el('span', {}, purchaseConfigured ? t('premium.buy') : t('premium.comingSoon')))
+      );
+      dataSection.appendChild(licenseCard);
+    }
   }
 
   // エクスポートボタン
