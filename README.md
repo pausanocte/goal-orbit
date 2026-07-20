@@ -38,27 +38,6 @@ https://yuyayasumi.github.io/goal-orbit/
 3. Set the source to `GitHub Actions`.
 4. Wait for the deployment workflow to finish.
 
-## Mobile app install
-
-Orbit is now a Progressive Web App (PWA), so it can be installed from the browser on Android and iOS without changing the data model.
-
-- Android: open the published Orbit URL in Chrome and use the install prompt or the download button in the top-right corner.
-- iOS: open the published Orbit URL in Safari, share it, then add it to the Home Screen.
-
-The installed app keeps local browser data on the device and can still use Google Drive sync when login is available.
-
-## Android Play Store setup
-
-The Android Play Store build is prepared as a free Trusted Web Activity (TWA) around the Orbit PWA.
-
-- External Stripe checkout is disabled by default in `js/config.js`.
-- Premium upsell UI is hidden by default for Play policy readiness.
-- Free item limits are set high enough for practical free use.
-- Play Store setup notes, listing draft, and Digital Asset Links templates are in `playstore/`.
-- A publishable privacy policy draft is available at `privacy.html`.
-
-See `playstore/README.md` before running Bubblewrap or creating the Play Console app.
-
 ## Notes about data
 
 - Local edits are saved in the browser as you use the app.

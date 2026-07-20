@@ -64,7 +64,6 @@
 html {
   font-size: 15px;
   scroll-behavior: smooth;
-  min-height: 100%;
 }
 /* === Light Theme Variables === */
 body.light-theme {
@@ -123,9 +122,6 @@ body {
   line-height: 1.6;
   overflow: hidden;
   height: 100vh;
-  min-height: 100%;
-  overscroll-behavior: none;
-  -webkit-tap-highlight-color: transparent;
 }
 
 /* === Layout === */
@@ -133,15 +129,6 @@ body {
   display: flex;
   height: 100vh;
   overflow: hidden;
-}
-
-@supports (height: 100dvh) {
-  body,
-  .app-layout,
-  .sidebar,
-  .main-content {
-    height: 100dvh;
-  }
 }
 
 /* === Sidebar === */
@@ -279,40 +266,6 @@ body {
 .sidebar-open-btn:hover {
   background: var(--surface-glass-hover);
   color: var(--accent-primary);
-}
-
-.install-app-btn {
-  position: fixed;
-  right: calc(20px + env(safe-area-inset-right));
-  top: calc(20px + env(safe-area-inset-top));
-  z-index: 100;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-light);
-  color: var(--text-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: var(--shadow-md);
-  transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
-}
-
-.install-app-btn[hidden] {
-  display: none;
-}
-
-.install-app-btn:hover {
-  background: var(--surface-glass-hover);
-  color: var(--accent-primary);
-  transform: translateY(-1px);
-}
-
-.install-app-btn svg {
-  width: 18px;
-  height: 18px;
 }
 
 .app-layout.sidebar-collapsed .sidebar-open-btn {
@@ -470,7 +423,6 @@ body {
   background: var(--bg-primary);
   position: relative;
   transition: padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  -webkit-overflow-scrolling: touch;
 }
 
 .app-layout.sidebar-collapsed .main-content {
@@ -2961,252 +2913,4 @@ select.form-input option {
 
 .widget-drag-handle:active {
   cursor: grabbing;
-}
-
-/* === Mobile app layout overrides === */
-@media (max-width: 720px) {
-  :root {
-    --sidebar-width: min(86vw, 320px);
-  }
-
-  .app-layout {
-    display: block;
-    width: 100%;
-  }
-
-  .sidebar {
-    position: fixed;
-    inset: 0 auto 0 0;
-    width: var(--sidebar-width);
-    min-width: 0;
-    height: 100dvh;
-    padding-left: env(safe-area-inset-left);
-    box-shadow: var(--shadow-lg);
-    transform: translateX(0);
-  }
-
-  .app-layout.sidebar-collapsed .sidebar {
-    margin-left: 0;
-    transform: translateX(calc(-1 * var(--sidebar-width) - env(safe-area-inset-left)));
-  }
-
-  .sidebar-logo {
-    padding-top: calc(16px + env(safe-area-inset-top)) !important;
-  }
-
-  .sidebar-footer {
-    padding-bottom: calc(14px + env(safe-area-inset-bottom));
-  }
-
-  .sidebar-open-btn {
-    left: calc(14px + env(safe-area-inset-left));
-    top: calc(14px + env(safe-area-inset-top));
-    width: 42px;
-    height: 42px;
-  }
-
-  .install-app-btn {
-    right: calc(14px + env(safe-area-inset-right));
-    top: calc(14px + env(safe-area-inset-top));
-    width: 42px;
-    height: 42px;
-  }
-
-  .main-content,
-  .app-layout.sidebar-collapsed .main-content {
-    width: 100%;
-    height: 100dvh;
-    padding: calc(72px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
-  }
-
-  .main-content::before {
-    display: none;
-  }
-
-  .page-header {
-    align-items: stretch;
-    flex-direction: column;
-    gap: 14px;
-    margin-bottom: 20px;
-  }
-
-  .page-title {
-    font-size: 1.35rem;
-  }
-
-  .page-subtitle {
-    font-size: 0.82rem;
-  }
-
-  .stats-grid,
-  .goals-grid,
-  .dashboard-bottom-grid,
-  .today-page-grid {
-    grid-template-columns: 1fr !important;
-  }
-
-  .glass-card,
-  .stat-card,
-  .goal-card {
-    border-radius: var(--radius-md);
-    padding: 16px;
-  }
-
-  .filter-bar,
-  .filter-right-controls,
-  .header-controls,
-  .card-header-flex,
-  .status-filter-group {
-    align-items: stretch !important;
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .status-filter-group {
-    gap: 8px;
-  }
-
-  .filter-group {
-    width: 100%;
-    overflow-x: auto;
-    padding-bottom: 2px;
-  }
-
-  .filter-chip,
-  .layout-btn {
-    min-height: 36px;
-    white-space: nowrap;
-  }
-
-  .sort-select,
-  .filter-right-controls .form-input {
-    max-width: none;
-    width: 100%;
-  }
-
-  .layout-toggle-group {
-    width: 100%;
-  }
-
-  .layout-btn {
-    flex: 1;
-    justify-content: center;
-  }
-
-  .modal-overlay {
-    align-items: flex-end;
-    padding-top: calc(16px + env(safe-area-inset-top));
-  }
-
-  .modal {
-    width: 100%;
-    max-width: 100%;
-    max-height: calc(100dvh - env(safe-area-inset-top));
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  }
-
-  .modal-header {
-    padding: 18px 18px 0;
-  }
-
-  .modal-form {
-    padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
-  }
-
-  .modal-buttons {
-    flex-direction: column-reverse;
-  }
-
-  .modal-buttons .btn {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .area-tabs {
-    overflow-x: auto;
-    padding-bottom: 10px;
-  }
-
-  .area-tab-btn {
-    white-space: nowrap;
-  }
-
-  .goal-card.layout-list {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: start;
-    gap: 10px;
-  }
-
-  .goal-card.layout-list .goal-card-header,
-  .goal-card.layout-list .goal-card-info,
-  .goal-card.layout-list .goal-card-dynamic,
-  .goal-card.layout-list .goal-card-subtasks,
-  .goal-card.layout-list .goal-card-meta {
-    order: initial;
-  }
-
-  .goal-card.layout-list .goal-card-info,
-  .goal-card.layout-list .goal-card-dynamic,
-  .goal-card.layout-list .goal-card-subtasks {
-    grid-column: 1 / -1;
-    width: 100%;
-  }
-
-  .goal-card.layout-list .goal-card-meta {
-    grid-column: 1 / -1;
-    flex-wrap: wrap;
-  }
-
-  .goal-card.layout-list .goal-card-title,
-  .goal-card.layout-list .goal-card-desc {
-    white-space: normal;
-  }
-
-  .compact-list-header {
-    display: none !important;
-  }
-
-  .routines-list .dashboard-compact-item,
-  .projects-list .dashboard-compact-item {
-    grid-template-columns: 10px minmax(0, 1fr) 32px;
-    gap: 8px;
-    padding: 8px;
-  }
-
-  .routines-list .dashboard-compact-item > *,
-  .projects-list .dashboard-compact-item > * {
-    justify-self: start;
-  }
-
-  .routines-list .dashboard-compact-item .compact-item-info,
-  .projects-list .dashboard-compact-item .compact-item-info {
-    grid-column: 2 / 3;
-  }
-
-  .routines-list .dashboard-compact-item .dashboard-delete-goal-btn,
-  .projects-list .dashboard-compact-item .dashboard-delete-goal-btn {
-    grid-column: 3 / 4;
-    grid-row: 1;
-    justify-self: end;
-  }
-
-  .routines-list .dashboard-compact-item .compact-item-frequency,
-  .projects-list .dashboard-compact-item .inline-date-picker,
-  .projects-list .dashboard-compact-item .compact-item-progress,
-  .dashboard-compact-item .status-badge,
-  .dashboard-compact-item .priority-badge,
-  .routine-check-btn.compact {
-    grid-column: 2 / -1;
-    width: 100%;
-    max-width: 100%;
-  }
-
-  .compact-item-progress {
-    min-width: 0;
-  }
-
-  .dashboard-compact-item .inline-edit-date {
-    min-height: 32px;
-  }
 }

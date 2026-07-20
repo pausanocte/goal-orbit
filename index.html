@@ -2,20 +2,9 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Orbit - 目標管理アプリ</title>
-  <meta name="description" content="目標を軌道に乗せる、Routines・Projects・Resources の3つのAreaで管理できるゴール管理アプリ。">
-  <meta name="theme-color" content="#111118" media="(prefers-color-scheme: dark)">
-  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-  <meta name="color-scheme" content="dark light">
-  <meta name="format-detection" content="telephone=no">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Orbit">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" type="image/svg+xml" href="assets/icons/orbit-icon.svg">
-  <link rel="apple-touch-icon" href="assets/icons/orbit-icon-180.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orbit - 目標管理</title>
+  <meta name="description" content="目標を軌道に乗せる。Routines, Projects, Resourcesの3つのAreaで目標を管理し、月次振り返りで成長を記録するアプリケーション。">
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -30,23 +19,23 @@
   <script src="https://accounts.google.com/gsi/client"></script>
 
   <!-- Styles -->
-  <link rel="stylesheet" href="css/style.css?v=20260720-2">
+  <link rel="stylesheet" href="css/style.css?v=2">
 </head>
 <body>
   <div class="app-layout">
+    <!-- Sidebar Toggle Button (floating, visible when sidebar is collapsed) -->
     <button id="sidebar-open-btn" class="sidebar-open-btn" aria-label="Open Sidebar">
       <i data-lucide="menu"></i>
     </button>
 
-    <button id="install-app-btn" class="install-app-btn" type="button" hidden aria-label="Orbitをインストール" title="Orbitをインストール">
-      <i data-lucide="download"></i>
-    </button>
-
+    <!-- Sidebar -->
     <aside class="sidebar" id="sidebar"></aside>
 
+    <!-- Main Content -->
     <main class="main-content" id="main-content"></main>
   </div>
 
-  <script type="module" src="js/app.js?v=20260720-2"></script>
+  <!-- App Script -->
+  <script type="module" src="js/app.js?v=20260714-10"></script>
 </body>
 </html>

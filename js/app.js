@@ -15,7 +15,6 @@ import { refreshPremiumEntitlement } from './services/premium-api.js';
 import { setRetryDriveSyncHandler, setSyncStatus } from './sync-state.js';
 import { el } from './utils.js';
 import { t } from './i18n.js';
-import { initPwa } from './pwa.js';
 
 let syncDebounceTimer = null;
 let syncReady = false;
@@ -35,13 +34,6 @@ function navigateTo(page) {
   currentPage = page;
   renderSidebar(sidebarEl, currentPage, navigateTo);
   renderPage();
-  collapseSidebarOnSmallScreens();
-}
-
-function collapseSidebarOnSmallScreens() {
-  if (window.matchMedia('(max-width: 720px)').matches) {
-    document.querySelector('.app-layout')?.classList.add('sidebar-collapsed');
-  }
 }
 
 function flushPendingPageState() {
@@ -314,7 +306,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   setPremiumUnlocked(false);
-  initPwa();
   setRetryDriveSyncHandler(retryDriveSync);
   migrateIfNeeded(); // v2からのマイグレーション
   purgeExpiredTrash();
@@ -325,15 +316,6 @@ document.addEventListener('DOMContentLoaded', () => {
     openBtn.addEventListener('click', () => {
       document.querySelector('.app-layout').classList.remove('sidebar-collapsed');
     });
-  }
-
-  const mobileShell = window.matchMedia('(max-width: 720px)');
-  const handleMobileShellChange = () => collapseSidebarOnSmallScreens();
-  collapseSidebarOnSmallScreens();
-  if (mobileShell.addEventListener) {
-    mobileShell.addEventListener('change', handleMobileShellChange);
-  } else {
-    mobileShell.addListener(handleMobileShellChange);
   }
 
   window.addEventListener('beforeunload', flushPendingPageState);

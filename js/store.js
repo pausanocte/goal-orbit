@@ -2,7 +2,6 @@
 // Orbit v3 - データストア (LocalStorage)
 // ==========================================
 
-import { ORBIT_CONFIG } from './config.js';
 import { generateId } from './utils.js';
 
 const AREAS_KEY = 'orbit_areas';
@@ -13,10 +12,7 @@ const LAST_MODIFIED_KEY = 'orbit_last_modified';
 const DASHBOARD_LAYOUT_KEY = 'orbit_dashboard_layout';
 const LOCAL_USER_CHANGES_KEY = 'orbit_local_user_changes';
 const RECOVERY_BACKUP_KEY = 'orbit_recovery_backup';
-const configuredFreeItemLimit = Number(ORBIT_CONFIG.freeItemLimit);
-const FREE_ITEM_LIMIT = Number.isFinite(configuredFreeItemLimit) && configuredFreeItemLimit > 0
-  ? configuredFreeItemLimit
-  : 4;
+const FREE_ITEM_LIMIT = 4;
 const PREMIUM_UNLOCK_KEY = 'orbit_premium_unlocked';
 const SAMPLE_CHOICE_KEY = 'orbit_sample_choice';
 const DATA_VERSION = '3.1';
