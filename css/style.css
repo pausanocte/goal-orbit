@@ -3210,3 +3210,265 @@ select.form-input option {
     min-height: 32px;
   }
 }
+
+/* === Android app touch layout === */
+@media (max-width: 720px) {
+  html {
+    font-size: 16px;
+  }
+
+  body {
+    touch-action: manipulation;
+  }
+
+  .main-content,
+  .app-layout.sidebar-collapsed .main-content {
+    padding: calc(62px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(22px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
+  }
+
+  .sidebar-open-btn,
+  .install-app-btn {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+  }
+
+  .sidebar-nav-item,
+  .sidebar-action-btn,
+  .sidebar-close-btn,
+  .sidebar-add-area-btn,
+  .theme-toggle-btn,
+  .lang-toggle-btn,
+  .btn,
+  .filter-chip,
+  .layout-btn,
+  .area-tab-btn,
+  .icon-btn {
+    min-height: 44px;
+  }
+
+  .sidebar-close-btn,
+  .theme-toggle-btn {
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  .sort-control .btn-sm {
+    min-width: 44px;
+    padding-left: 0;
+    padding-right: 0;
+    justify-content: center;
+  }
+
+  .widget-drag-handle {
+    display: none;
+  }
+
+  .page-header .btn,
+  .page-header-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .page-header-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .dashboard-widget-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .dashboard-widget {
+    width: 100%;
+    min-height: 0;
+  }
+
+  .dashboard-widget.dragging,
+  .dashboard-compact-item-wrapper:hover,
+  .goal-card:hover,
+  .stat-card:hover {
+    transform: none;
+  }
+
+  .glass-card.active-col {
+    padding: 14px 12px;
+  }
+
+  .card-header-flex {
+    gap: 10px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .card-title {
+    font-size: 1rem;
+  }
+
+  .stats-grid {
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .stat-card.area-card {
+    min-height: 118px;
+    padding: 15px !important;
+  }
+
+  .stat-card-header {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .stat-card-label {
+    color: var(--text-primary);
+    font-size: 0.98rem !important;
+    line-height: 1.35;
+    white-space: normal;
+  }
+
+  .stat-card-breakdown {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+
+  .compact-list {
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .dashboard-compact-item-wrapper {
+    margin-bottom: 0;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.035);
+  }
+
+  .routines-list .dashboard-compact-item,
+  .projects-list .dashboard-compact-item {
+    grid-template-columns: 12px minmax(0, 1fr) 44px !important;
+    align-items: start;
+    gap: 10px;
+    min-height: 92px;
+    padding: 12px !important;
+    border-radius: 14px;
+  }
+
+  .dashboard-compact-item .recent-goal-area-dot {
+    margin-top: 7px;
+  }
+
+  .compact-item-info {
+    gap: 3px;
+  }
+
+  .compact-item-title {
+    font-size: 0.98rem;
+    line-height: 1.35;
+    white-space: normal;
+  }
+
+  .compact-item-meta {
+    font-size: 0.78rem;
+  }
+
+  .dashboard-delete-goal-btn,
+  .routine-check-btn.compact {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--border-subtle);
+    background: rgba(255, 255, 255, 0.025);
+  }
+
+  .routine-check-btn.compact {
+    grid-column: 3 / 4;
+    grid-row: 2 / 3;
+    justify-self: end;
+  }
+
+  .routine-check-btn.compact svg,
+  .dashboard-delete-goal-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .routines-list .dashboard-compact-item .compact-item-frequency {
+    grid-column: 2 / 3;
+    width: auto;
+    max-width: 100%;
+    min-height: 36px;
+    padding: 8px 11px !important;
+    border-radius: 999px;
+    font-size: 0.78rem !important;
+    justify-self: start;
+  }
+
+  .projects-list .dashboard-compact-item .compact-item-progress {
+    grid-column: 2 / -1;
+    width: 100%;
+    min-height: 34px;
+  }
+
+  .routines-list .dashboard-compact-item .inline-date-picker,
+  .projects-list .dashboard-compact-item .inline-date-picker,
+  .dashboard-compact-item .status-badge,
+  .dashboard-compact-item .priority-badge {
+    display: none;
+  }
+
+  .dashboard-compact-item-wrapper > .subtask-list {
+    padding: 0 12px 12px 34px !important;
+    gap: 6px !important;
+  }
+
+  .dashboard-compact-item-wrapper .subtask-item {
+    min-height: 36px;
+    padding: 4px 0 !important;
+  }
+
+  .dashboard-compact-item-wrapper .subtask-check {
+    width: 22px;
+    height: 22px;
+  }
+
+  .dashboard-compact-item-wrapper .subtask-text {
+    font-size: 0.84rem !important;
+    line-height: 1.35;
+  }
+
+  .recent-goal-item,
+  .due-soon-item {
+    align-items: flex-start;
+    min-height: 56px;
+    padding: 12px 10px;
+  }
+
+  .recent-goal-title {
+    white-space: normal;
+    line-height: 1.35;
+  }
+
+  .due-badge,
+  .priority-badge,
+  .status-badge {
+    min-height: 30px;
+    align-items: center;
+  }
+
+  .modal {
+    max-height: calc(100dvh - env(safe-area-inset-top));
+  }
+
+  .form-input,
+  .date-picker-calendar-btn,
+  .frequency-weekday-chip,
+  .calendar-sync-option {
+    min-height: 46px;
+  }
+}

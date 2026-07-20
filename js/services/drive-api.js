@@ -22,6 +22,7 @@ let currentFileId = null;
 let statusCallback = null;
 let currentUserInfo = null;
 let currentScope = '';
+let lastAuthError = null;
 let readyHandled = false;
 let initStarted = false;
 let initRetryTimer = null;
@@ -44,6 +45,15 @@ function saveAuthSession(tokenResponse) {
 function hasRequiredScopes(scopeValue) {
   const granted = new Set(String(scopeValue || '').split(/\s+/).filter(Boolean));
   return REQUIRED_SCOPES.every(scope => granted.has(scope));
+}
+
+function clearAuthSession() {
+  isAuthorized = false;
+  currentFileId = null;
+  currentUserInfo = null;
+  currentScope = '';
+  sessionStorage.removeItem(AUTH_SESSION_KEY);
+  localStorage.removeItem(AUTO_LOGIN_KEY);
 }
 
 function restoreAuthSession() {
@@ -70,12 +80,12 @@ function restoreAuthSession() {
 async function finishAuthorization(tokenResponse = null) {
   if (tokenResponse) {
     if (!hasRequiredScopes(tokenResponse.scope || SCOPES)) {
-      sessionStorage.removeItem(AUTH_SESSION_KEY);
-      isAuthorized = false;
-      currentScope = '';
+      lastAuthError = 'missing_required_scopes';
+      clearAuthSession();
       updateStatus('ready');
       return;
     }
+    lastAuthError = null;
     gapi.client.setToken(tokenResponse);
     saveAuthSession(tokenResponse);
   }
@@ -107,6 +117,10 @@ export function getUserInfo() {
   return currentUserInfo;
 }
 
+export function getLastAuthError() {
+  return lastAuthError;
+}
+
 export function getGoogleAccessToken() {
   return isAuthorized && hasRequiredScopes(currentScope) ? gapi.client.getToken()?.access_token || null : null;
 }
@@ -120,6 +134,7 @@ export function initDriveApi(onStatusChange) {
   initTimeoutTimer = setTimeout(() => {
     if (!gapiInited || !gisInited) {
       console.warn('Google APIs did not finish loading in time.');
+      lastAuthError = 'google_api_load_timeout';
       updateStatus('error');
     }
   }, INIT_TIMEOUT_MS);
@@ -148,6 +163,7 @@ async function initializeGapiClient() {
     checkIfReady();
   } catch (err) {
     console.error('Error initializing GAPI client', err);
+    lastAuthError = err?.message || 'gapi_init_failed';
     updateStatus('error');
   }
 }
@@ -160,12 +176,18 @@ function initializeGisClient() {
     include_granted_scopes: true,
     callback: async (resp) => {
       if (resp.error !== undefined) {
+        lastAuthError = resp.error || 'auth_error';
+        clearAuthSession();
         updateStatus('ready');
         return;
       }
       await finishAuthorization(resp);
     },
-    error_callback: () => updateStatus('ready'),
+    error_callback: (err) => {
+      lastAuthError = err?.type || err?.message || 'auth_popup_failed';
+      clearAuthSession();
+      updateStatus('ready');
+    },
   });
   gisInited = true;
   checkIfReady();
@@ -184,7 +206,13 @@ async function checkIfReady() {
 
   if (localStorage.getItem(AUTO_LOGIN_KEY) === 'true') {
     // Reuse the user's existing Google grant when the browser permits it.
-    tokenClient.requestAccessToken({ prompt: '' });
+    try {
+      tokenClient.requestAccessToken({ prompt: '' });
+    } catch (err) {
+      lastAuthError = err?.message || 'silent_auth_failed';
+      clearAuthSession();
+      updateStatus('ready');
+    }
     return;
   }
 
@@ -196,10 +224,22 @@ function updateStatus(status) {
 }
 
 export function handleAuthClick() {
-  if (gapi.client.getToken() === null || !hasRequiredScopes(currentScope)) {
-    tokenClient.requestAccessToken({prompt: 'consent'});
-  } else {
-    tokenClient.requestAccessToken({prompt: ''});
+  if (!tokenClient || typeof gapi === 'undefined' || !gapi?.client) {
+    lastAuthError = 'google_api_not_ready';
+    updateStatus('error');
+    return;
+  }
+
+  try {
+    if (gapi.client.getToken() === null || !hasRequiredScopes(currentScope)) {
+      tokenClient.requestAccessToken({prompt: 'consent'});
+    } else {
+      tokenClient.requestAccessToken({prompt: ''});
+    }
+  } catch (err) {
+    lastAuthError = err?.message || 'auth_request_failed';
+    clearAuthSession();
+    updateStatus('ready');
   }
 }
 
@@ -208,12 +248,8 @@ export function handleSignoutClick() {
   if (token !== null) {
     google.accounts.oauth2.revoke(token.access_token);
     gapi.client.setToken('');
-    isAuthorized = false;
-    currentFileId = null;
-    currentUserInfo = null;
-    currentScope = '';
-    sessionStorage.removeItem(AUTH_SESSION_KEY);
-    localStorage.removeItem(AUTO_LOGIN_KEY);
+    clearAuthSession();
+    lastAuthError = null;
     updateStatus('ready');
   }
 }
