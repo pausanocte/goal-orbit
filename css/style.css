@@ -281,6 +281,10 @@ body {
   color: var(--accent-primary);
 }
 
+.sidebar-backdrop {
+  display: none;
+}
+
 .install-app-btn {
   position: fixed;
   right: calc(20px + env(safe-area-inset-right));
@@ -2983,11 +2987,34 @@ select.form-input option {
     padding-left: env(safe-area-inset-left);
     box-shadow: var(--shadow-lg);
     transform: translateX(0);
+    z-index: 130;
+    will-change: transform;
   }
 
   .app-layout.sidebar-collapsed .sidebar {
     margin-left: 0;
     transform: translateX(calc(-1 * var(--sidebar-width) - env(safe-area-inset-left)));
+  }
+
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 120;
+    display: block;
+    background: rgba(5, 5, 10, 0.56);
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity 0.24s ease;
+    touch-action: pan-y;
+  }
+
+  .app-layout.sidebar-collapsed .sidebar-backdrop {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .app-layout:not(.sidebar-collapsed) .main-content {
+    pointer-events: none;
   }
 
   .sidebar-logo {

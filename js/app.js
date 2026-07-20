@@ -29,6 +29,15 @@ let currentPage = 'dashboard';
 
 const sidebarEl = document.getElementById('sidebar');
 const mainContentEl = document.getElementById('main-content');
+const appLayoutEl = document.querySelector('.app-layout');
+const sidebarBackdropEl = document.getElementById('sidebar-backdrop');
+
+const SIDEBAR_SWIPE_EDGE_PX = 36;
+const SIDEBAR_SWIPE_MIN_X = 58;
+const SIDEBAR_SWIPE_MAX_Y = 72;
+const SIDEBAR_SWIPE_VELOCITY = 0.45;
+
+let sidebarGesture = null;
 
 function navigateTo(page) {
   flushPendingPageState();
@@ -40,8 +49,101 @@ function navigateTo(page) {
 
 function collapseSidebarOnSmallScreens() {
   if (window.matchMedia('(max-width: 720px)').matches) {
-    document.querySelector('.app-layout')?.classList.add('sidebar-collapsed');
+    setSidebarOpen(false);
   }
+}
+
+function isSmallScreenShell() {
+  return window.matchMedia('(max-width: 720px)').matches;
+}
+
+function setSidebarOpen(isOpen) {
+  appLayoutEl?.classList.toggle('sidebar-collapsed', !isOpen);
+  sidebarBackdropEl?.setAttribute('aria-hidden', String(!isOpen));
+}
+
+function initSidebarGestures() {
+  const closeSidebar = () => setSidebarOpen(false);
+  sidebarBackdropEl?.addEventListener('click', closeSidebar);
+
+  window.addEventListener('pointerdown', (event) => {
+    if (!isSmallScreenShell() || !appLayoutEl) return;
+    if (event.isPrimary === false) return;
+
+    const isCollapsed = appLayoutEl.classList.contains('sidebar-collapsed');
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const sidebarRect = sidebarEl?.getBoundingClientRect();
+    const sidebarRight = sidebarRect?.right || 0;
+    const startOnOpenEdge = isCollapsed && startX <= SIDEBAR_SWIPE_EDGE_PX;
+    const startOnCloseZone = !isCollapsed && (
+      startX <= sidebarRight + 24 || event.target === sidebarBackdropEl
+    );
+
+    if (!startOnOpenEdge && !startOnCloseZone) return;
+
+    sidebarGesture = {
+      pointerId: event.pointerId,
+      mode: isCollapsed ? 'open' : 'close',
+      startX,
+      startY,
+      startedAt: performance.now(),
+      cancelled: false
+    };
+  }, { passive: true });
+
+  window.addEventListener('pointermove', (event) => {
+    if (!sidebarGesture || event.pointerId !== sidebarGesture.pointerId) return;
+
+    const dx = event.clientX - sidebarGesture.startX;
+    const dy = event.clientY - sidebarGesture.startY;
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+
+    if (absDy > SIDEBAR_SWIPE_MAX_Y && absDy > absDx * 1.2) {
+      sidebarGesture.cancelled = true;
+      return;
+    }
+
+    const horizontalSwipe =
+      sidebarGesture.mode === 'open'
+        ? dx > 12 && absDx > absDy
+        : dx < -12 && absDx > absDy;
+
+    if (horizontalSwipe) event.preventDefault();
+  }, { passive: false });
+
+  window.addEventListener('pointerup', (event) => {
+    if (!sidebarGesture || event.pointerId !== sidebarGesture.pointerId) return;
+
+    const dx = event.clientX - sidebarGesture.startX;
+    const dy = event.clientY - sidebarGesture.startY;
+    const elapsed = Math.max(1, performance.now() - sidebarGesture.startedAt);
+    const velocity = dx / elapsed;
+    const isMostlyHorizontal = Math.abs(dy) <= SIDEBAR_SWIPE_MAX_Y;
+
+    if (!sidebarGesture.cancelled && isMostlyHorizontal) {
+      if (
+        sidebarGesture.mode === 'open' &&
+        (dx >= SIDEBAR_SWIPE_MIN_X || (dx > 30 && velocity >= SIDEBAR_SWIPE_VELOCITY))
+      ) {
+        setSidebarOpen(true);
+      }
+
+      if (
+        sidebarGesture.mode === 'close' &&
+        (dx <= -SIDEBAR_SWIPE_MIN_X || (dx < -30 && velocity <= -SIDEBAR_SWIPE_VELOCITY))
+      ) {
+        setSidebarOpen(false);
+      }
+    }
+
+    sidebarGesture = null;
+  }, { passive: true });
+
+  window.addEventListener('pointercancel', (event) => {
+    if (sidebarGesture?.pointerId === event.pointerId) sidebarGesture = null;
+  }, { passive: true });
 }
 
 function flushPendingPageState() {
@@ -323,9 +425,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const openBtn = document.getElementById('sidebar-open-btn');
   if (openBtn) {
     openBtn.addEventListener('click', () => {
-      document.querySelector('.app-layout').classList.remove('sidebar-collapsed');
+      setSidebarOpen(true);
     });
   }
+  initSidebarGestures();
 
   const mobileShell = window.matchMedia('(max-width: 720px)');
   const handleMobileShellChange = () => collapseSidebarOnSmallScreens();
