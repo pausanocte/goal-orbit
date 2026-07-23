@@ -1,12 +1,12 @@
-const CACHE_NAME = 'orbit-app-v20260721-6';
+const CACHE_NAME = 'orbit-app-v20260723-1';
 
 const APP_SHELL_URLS = [
   './',
   './index.html',
   './privacy.html',
   './manifest.webmanifest',
-  './css/style.css?v=20260721-6',
-  './js/app.js?v=20260721-6',
+  './css/style.css?v=20260723-1',
+  './js/app.js?v=20260723-1',
   './js/config.js',
   './js/i18n.js',
   './js/pwa.js',

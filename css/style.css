@@ -1393,6 +1393,76 @@ select.form-input option {
   opacity: 1;
 }
 
+.exit-sync-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 18px calc(18px + env(safe-area-inset-right)) calc(22px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left));
+  background: rgba(5, 5, 10, 0.28);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.exit-sync-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.exit-sync-card {
+  width: min(100%, 380px);
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-lg);
+}
+
+.exit-sync-spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.12);
+  border-top-color: var(--accent-primary);
+  animation: spin 0.9s linear infinite;
+}
+
+.exit-sync-overlay[data-status="done"] .exit-sync-spinner {
+  border-color: rgba(34, 197, 94, 0.25);
+  border-top-color: #22c55e;
+}
+
+.exit-sync-overlay[data-status="failed"] .exit-sync-spinner {
+  animation: none;
+  border-color: rgba(239, 68, 68, 0.28);
+  border-top-color: #ef4444;
+}
+
+.exit-sync-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.exit-sync-title {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+.exit-sync-detail {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
 .modal {
   width: 520px;
   max-width: 90vw;

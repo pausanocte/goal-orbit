@@ -23,7 +23,13 @@ let startupSyncInProgress = false;
 let startupSyncResolved = false;
 let localSyncInProgress = false;
 let localSyncQueued = false;
+let activeSyncPromise = null;
+let exitSyncOverlay = null;
+let exitBackArmedUntil = 0;
 const SYNC_CONFLICT_TOLERANCE_MS = 30 * 1000;
+const EXIT_SYNC_TIMEOUT_MS = 8000;
+const EXIT_BACK_ARM_MS = 5000;
+const EXIT_GUARD_STATE = { orbitExitGuard: true };
 
 let currentPage = 'dashboard';
 
@@ -288,13 +294,18 @@ async function syncLocalData() {
     localSyncQueued = true;
     setSyncStatus('syncing');
     triggerSidebarRender();
-    return;
+    return activeSyncPromise || false;
   }
 
   localSyncInProgress = true;
   setSyncStatus('syncing');
   triggerSidebarRender();
 
+  activeSyncPromise = runLocalSync();
+  return activeSyncPromise;
+}
+
+async function runLocalSync() {
   try {
     do {
       localSyncQueued = false;
@@ -305,13 +316,131 @@ async function syncLocalData() {
     } while (localSyncQueued);
 
     setSyncStatus('synced');
+    return true;
   } catch (err) {
     console.error(err);
     setSyncStatus('error');
+    return false;
   } finally {
     localSyncInProgress = false;
+    activeSyncPromise = null;
     triggerSidebarRender();
   }
+}
+
+function getExitSyncText(status) {
+  const isJa = document.documentElement.lang === 'ja' || navigator.language?.startsWith('ja');
+  const copy = {
+    syncing: {
+      ja: ['Google Driveに同期しています', '終わるまで少し待ってください。'],
+      en: ['Syncing to Google Drive', 'Please wait before closing Orbit.']
+    },
+    done: {
+      ja: ['同期しました', 'もう一度戻ると終了できます。'],
+      en: ['Synced', 'Press Back again to close Orbit.']
+    },
+    failed: {
+      ja: ['同期できませんでした', 'ローカルには保存済みです。通信状況を確認してください。'],
+      en: ['Sync failed', 'Your changes are saved locally. Check your connection.']
+    }
+  };
+  return copy[status]?.[isJa ? 'ja' : 'en'] || copy.syncing.en;
+}
+
+function showExitSyncOverlay(status = 'syncing') {
+  const [title, detail] = getExitSyncText(status);
+  if (!exitSyncOverlay) {
+    exitSyncOverlay = el('div', { className: 'exit-sync-overlay', role: 'status', 'aria-live': 'polite' },
+      el('div', { className: 'exit-sync-card' },
+        el('div', { className: 'exit-sync-spinner', 'aria-hidden': 'true' }),
+        el('div', { className: 'exit-sync-copy' },
+          el('strong', { className: 'exit-sync-title' }, title),
+          el('span', { className: 'exit-sync-detail' }, detail)
+        )
+      )
+    );
+    document.body.appendChild(exitSyncOverlay);
+  }
+
+  exitSyncOverlay.dataset.status = status;
+  exitSyncOverlay.querySelector('.exit-sync-title').textContent = title;
+  exitSyncOverlay.querySelector('.exit-sync-detail').textContent = detail;
+  exitSyncOverlay.classList.add('active');
+}
+
+function hideExitSyncOverlay(delay = 0) {
+  if (!exitSyncOverlay) return;
+  window.setTimeout(() => {
+    exitSyncOverlay?.classList.remove('active');
+  }, delay);
+}
+
+async function syncBeforeLeavingApp() {
+  flushPendingPageState();
+  clearTimeout(syncDebounceTimer);
+
+  if (!isDriveAuthorized() || !syncReady || (!hasLocalUserChanges() && !localSyncInProgress)) {
+    exitBackArmedUntil = Date.now() + EXIT_BACK_ARM_MS;
+    return true;
+  }
+
+  showExitSyncOverlay('syncing');
+
+  const timeoutPromise = new Promise(resolve => {
+    window.setTimeout(() => resolve(false), EXIT_SYNC_TIMEOUT_MS);
+  });
+  const syncSucceeded = await Promise.race([syncLocalData(), timeoutPromise]);
+
+  if (syncSucceeded && !hasLocalUserChanges()) {
+    showExitSyncOverlay('done');
+    exitBackArmedUntil = Date.now() + EXIT_BACK_ARM_MS;
+    hideExitSyncOverlay(1800);
+    return true;
+  }
+
+  showExitSyncOverlay('failed');
+  hideExitSyncOverlay(3500);
+  return false;
+}
+
+function requestFinalSync(reason = 'background') {
+  flushPendingPageState();
+  clearTimeout(syncDebounceTimer);
+
+  if (!isDriveAuthorized() || !syncReady || !hasLocalUserChanges()) return;
+  if (reason === 'back') {
+    syncBeforeLeavingApp();
+    return;
+  }
+  syncLocalData();
+}
+
+function initBackButtonSyncGuard() {
+  if (!window.history?.pushState) return;
+
+  const armGuard = () => {
+    if (!isSmallScreenShell()) return;
+    if (!history.state?.orbitExitGuard) {
+      history.pushState(EXIT_GUARD_STATE, '', location.href);
+    }
+  };
+
+  history.replaceState({ ...(history.state || {}), orbitAppRoot: true }, '', location.href);
+  armGuard();
+
+  window.addEventListener('popstate', async () => {
+    if (!isSmallScreenShell()) return;
+
+    const canLeave = await syncBeforeLeavingApp();
+    if (!canLeave) {
+      armGuard();
+      return;
+    }
+
+    window.setTimeout(() => {
+      if (Date.now() > exitBackArmedUntil && isSmallScreenShell()) armGuard();
+    }, EXIT_BACK_ARM_MS + 200);
+  });
 }
 
 function dataSetsMatch(localData, driveData) {
@@ -429,6 +558,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   initSidebarGestures();
+  initBackButtonSyncGuard();
 
   const mobileShell = window.matchMedia('(max-width: 720px)');
   const handleMobileShellChange = () => collapseSidebarOnSmallScreens();
@@ -439,8 +569,11 @@ document.addEventListener('DOMContentLoaded', () => {
     mobileShell.addListener(handleMobileShellChange);
   }
 
-  window.addEventListener('beforeunload', flushPendingPageState);
-  window.addEventListener('pagehide', flushPendingPageState);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') requestFinalSync('background');
+  });
+  window.addEventListener('beforeunload', requestFinalSync);
+  window.addEventListener('pagehide', requestFinalSync);
 
   navigateTo('dashboard');
 });
